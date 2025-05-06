@@ -1,0 +1,41 @@
+\usepackage[
+    backend=biber, 
+   	style=ieee, % alphabetic
+    % citestyle=authoryear-icomp, % alphabetic, authortitle
+    % date=short,
+    % backref=false, % Display pages on which the reference is used
+    % maxnames=1, % affects the cites
+    % maxbibnames=3, % affects the bibliography
+    % pagetracker=true,
+    % isbn=false,    
+    % block=ragged, % break urls
+    % firstinits=true, % shorten first names
+    % backrefstyle=three+ % Combine pages
+    % style=authoryear,
+    % backend=biber,
+    urldate=long,
+    maxnames=2,
+    minnames=1,
+    % dashed=false
+]{biblatex}
+
+% Distance between bibliographical references
+\setlength{\bibitemsep}{.5em}
+
+% Indentation after the first line
+\setlength{\bibhang}{2em}
+
+% URL in the bibliography is in angle brackets
+\DeclareFieldFormat{url}{<\url{#1}>}
+
+% break too long urls
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{8000}
+
+% Source of the bibliography file
+\bibliography{sources/literature.bib}
+
+% Set title to "References" instead of "Bibliography"
+\DefineBibliographyStrings{english}{%
+    bibliography = {References},
+}
