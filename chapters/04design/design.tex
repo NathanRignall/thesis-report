@@ -1,5 +1,252 @@
+\graphicspath{{chapters/04design/graphs}}
+
 \chapter{Design and implementation}
 
-This chapter may be called something else\ldots but in general the
-idea is that you have one (or a few) ``meat'' chapters which describe
-the work you did in technical detail.
+%This chapter may be called something else\ldots but in general the
+%idea is that you have one (or a few) ``meat'' chapters which describe
+%the work you did in technical detail.
+
+\section{Simulator}
+In order to be able to develop an advanced heterogenous LLM scheduler, we need access to many high-performance GPUs to test our schedule configurations.
+Unfortunately, GPU-hours are prohibitively expensive and using such hours for “dummy” workloads to test a scheduler would be considered a waste of resources.
+Instead, we utilise the latest simulator technology to estimate the performance of LLM inference given a set of input parameters.
+Several simulators exist that attempt to model the performance of an LLM request by using estimation techniques.
+
+\textbf{Shallowsim} is a specialist simulator designed to estimate the compute times for different LLM request types.
+
+\textbf{Vidur} (essentially uses linear regression)
+
+\textbf{LLMCompass} (Need to look up)
+
+We Select Shallowsim for its transparency for calculations (simplicity).
+And support for Mixture of Expert models
+
+\subsection{Implementation}
+
+\textbf{Prefill}
+
+Dense-MLA (dense Multi-head/Multi-query Attention compute)
+
+TP-MLA (Dense-MLA plus the Tensor-Parallel all-reduce)
+
+Dense-MLP (feed-forward network compute)
+
+Shared-Expert (MoE expert run that every token visits)
+Routed-Expert (MoE expert run that only selected tokens visit)
+
+Every token first passes through the Shared Expert, but a subset of tokens are also routed to extra specialists. This is modelled with the Routed Expert function.
+
+Dispatch (All-to-All that ships tokens out to remote experts)
+Combine (All-to-All that brings tokens back)
+
+Sending activations to the respective routed expert nodes is modelled using the Dispatch step, the Combine step then models how processed activations are collated back together. These two functions model the network overhead of LLM queries.
+
+Compute Time
+-	Dense MLA, Dense MLP (Dense Layers)
+-	TP-MLA, Shared Expert, Routed Expert (Sparse Layers)
+Communication Timemake 
+-	Dispatch, Combine (Sparse Layers)
+Overlap Penalties
+-	If Combine is longer than TP-MLA + Shared Expert
+-	If Dispatch is longer than Routed Expert
+Sum
+-	Compute + Communication + Any Overlap = Prefill Time
+
+\subsubsection{Decode}
+
+Load-KV
+Dense-MLA (as prefill)
+Sparse-MLA
+Dense-MLP (as prefill)
+Shared-Expert (as prefill)
+Routed-Expert (as prefill)
+Dispatch (as prefill)
+Combine (as prefill)
+
+Compute Time
+-	Dense MLA, Dense MLP (Dense Layers)
+-	Sparse MLA, Shared Expert, Routed Expert (Sparse Layers)
+Communication Time
+-	Dispatch, Combine (Sparse Layers)
+Overlap Penalties
+-	TODO
+Sum
+-	TODO = Per token decode time 
+
+\subsection{Modifactions}
+
+What we have done to modify the shallowsim simulator.
+
+\subsection{Usage}
+We will use requests per second as our measure of throughput for the overall system
+
+as it can be a key measure of efficiency
+encouraging a cost effective solution
+
+Prefill Requests
+
+Using the Shallowsim simulator we can measure the time in milliseconds to compute a single prefill request for a given set of parameters. We can then convert this time to requests per second by doing
+%(1 / time_ms * 1000).
+
+Include sample parameters
+
+Decode Requests
+The Shallowsim supports calculating the time in milliseconds for a single token generation step. As we would expect several tokens to be generated, we cannot directly compute requests per second using Shallowsim, instead we must perform additional computations.
+
+The decode time of a single token is affected by the input/current sequence length, therefore we must measure the single token compute time for every token to be generated. Why
+
+Then, by summing all the individual decode token compute times we can get the total decode time for a given request. Similar to prefill, we can convert this into requests per second by doing
+
+%(1 / time_ms * 1000).
+
+Include algorithm of decode sequence.
+
+Include graph of decode time increasing with input length
+
+% Architecture
+\clearpage
+\section{Architecture}
+How the system will be constructed, how it is similar to existing work.
+
+Like thunderserve
+
+Separate into two distinct problems
+
+Outer optimisation
+
+Effectively an inner finite bin packing problem (statistical best solution)
+
+Explain GPU islands… Scheduler direct traffic… Configure GPUs…
+
+\subsection{Inner Loop}
+
+Stuff
+
+\subsection{Outer Loop}
+
+Stuff
+
+% How requests will be modeled
+\clearpage
+\section{Workload Modeling}
+Statistical distributions (available from sources)
+
+\subsection{Input Sequence Length}
+To achieve more fine-grained control of request scheduling, dependant on both input sequence and decode length, we model the input request length as a probability distribution.
+Hence, for a chosen workload type, there is a specific probability of request arriving with given sequence length.
+
+% Equation of PDF
+
+% Graph of PDF
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{sample.pdf}
+    \caption[Sample probability distribution for input sequence lengtht]
+    {Sample probability distribution for input sequence length}
+    \label{fig:04-sample-pdf}
+\end{figure}
+
+Instead of only considering the distribution of sequence lengths during assignment, to model system throughput, we use them to find the most optimal pairing of sequence length to GPU island.
+Therefore, specific GPU islands can be configured to most optimally perform prefill operations for a specific sequence length.
+When a request arrives, we can direct it to the GPU islands targeted to serve that request length, defined in the schedule.
+
+% Graph of sequence length vs GPU
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{sample.pdf}
+    \caption[Stuff]
+    {Stuff}
+    \label{fig:04-sequence-length-gpu}
+\end{figure}
+
+\subsection{Decode Length}
+While decode length can also be modelled using a probability density function, this information (specific distribution) is less useful from a scheduling perspective.
+In contrast to input sequence length, the decode length is not known the moment a request arrives.
+Instead, the generation process proceeds token-by-token until an explicit or implicit stop condition is met (e.g. end-of-sequence token). 
+
+We can assume that a decode request must complete on the GPU island it started processing on, as switching island would incur additional communication overhead and significantly impact the request response time. %Why?
+
+For some workloads there is a small correlation between input sequence length and decode length, but this relationship is often not significant. %Example?
+Therefore, at the point of request arrival we do not have enough information about the decode length to make informed per-decode length scheduling decisions.
+
+Hence, creating specific GPU configurations for short, medium, long, etc. decode lengths would likely be inefficient. 
+As we cannot accurately predict decode length, there is a high probability that a decode request would have to move island.
+
+Prior work has demonstrated that it can be possible to predict decode length using the input text contents. %Reference?
+
+Instead, we model our scheduler using an average decode length for a given workload type and design every GPU decode island to support the maximum decode length expected. 
+Unlike the sequence length, the decode length is simply being used for system modelling activities to characterise performance, not direct traffic.
+
+However, we can still make scheduling decisions for the decode phase using the sequence length as a feature, given the maximum decode length affected by the input length.
+This is due to all the input and decode tokens KV values being stored in GPU memory.
+
+% Objectives
+\section{Objectives}
+Stuff
+
+\subsection{Throughput}
+Stuff
+
+\subsection{Percent Allocation}
+Stuff
+
+% Constraints
+\section{Constraint Optimisation}
+
+
+% Heuristics used
+\clearpage
+\section{Scheduling Assumptions}
+
+We can make several assertions and assumptions in an attempt to reduce the search space of the scheduler generation process.
+These effectively apply heuristics to our problem, that are well crafted to simplify the computation requirements while retaining solution quality.
+
+\subsection{Resolution}
+We can use the simulator to benchmark the prefill and decode throughput of an island for a given input sequence length.
+While it is feasible to consider each sequence length individually, we can use a binning approach to reduce the search space of the scheduler.
+The width of the bins effectively controls the resolution of the solution generated, which can be dynamically adjusted depending on input parameters.
+
+% Graph of binning techniques/resolution
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{sample.pdf}
+    \caption[Stuff]
+    {Stuff}
+    \label{fig:04-sequence-length-binning}
+\end{figure}
+
+%Single graph displaying throughput of prefill and decode for specific GPU (Not sure what this is for)
+
+\subsection{Optimal Parallelism}
+To further reduce the search space of the scheduler, we can assume for a given model and GPU type, there exists an optimal parallelism configuration that is consistent across input sequence lengths.
+Demonstrated in \autoref{fig:04-prefill-throughput-vs-sequence-length} we can see that for all GPUs, $tp=64$ and $dp=1$ is the fastest parallelism configuration for all sequence lengths above 128 tokens.
+Given we expect the majority of input requests to be over 128 tokens, we can reason that there is  an \textit{optimal} GPU prefill configuration.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{simulator_prefill_throughput_vs_seq_len.pdf}
+    \caption[Stuff]
+    {Stuff}
+    \label{fig:04-prefill-throughput-vs-sequence-length}
+\end{figure}
+
+By pre-computing this optimal configuration, we significantly reduce the number of parameters considered by the scheduler.
+This is because an island cannot be formed with several different parallelism configurations simultaneously. %Why?
+And hence, the scheduler would have to contain a variable for each sequence-length-parallelism combination.
+
+\section{Inner Solver}
+
+Treating the 
+
+\section{Outer Optimiser}
+
+Stuff
+
+% THIS IS USEFUL TEXT - BUT BETTER FOR LATER
+
+%When profiling a specific GPU island for a given sequence length (for scheduling), the exact parallelism configuration of the GPUs must be known.
+%Hence, we must first benchmark the GPU island across a range of sequence lengths that we expect to receive in our workload and determine the optimal parallelism configuration.
+
+%While it is possible that the optimal parallelism configuration for a set of GPUs is different across a range of sequence lengths, we can assume that the best configurations are within a few percent of each other.
+
+%We can integrate this benchmark parallelism selection step with the profiling step for the constraint solver to save computation requests

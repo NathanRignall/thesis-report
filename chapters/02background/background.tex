@@ -2,22 +2,187 @@
 
 \chapter{Background}
 
-A more extensive coverage of what's required to understand your work.
-In general you should assume the reader has a good undergraduate
-degree in computer science, but is not necessarily an expert in the
-particular area you've been working on. Hence this chapter may need to
-summarize some ``text book'' material. \autocite{agrawalVidurLargeScaleSimulation2024}
+%A more extensive coverage of what's required to understand your work.
+%In general you should assume the reader has a good undergraduate
+%degree in computer science, but is not necessarily an expert in the
+%particular area you've been working on. Hence this chapter may need to
+%summarize some ``text book'' material.
+%
+%This is not something you'd normally require in an academic paper, and
+%it may not be appropriate for your particular circumstances. Indeed,
+%in some cases it's possible to cover all of the ``background''
+%material either in the introduction or at appropriate places in the
+%rest of the dissertation.
 
-This is not something you'd normally require in an academic paper, and
-it may not be appropriate for your particular circumstances. Indeed,
-in some cases it's possible to cover all of the ``background''
-material either in the introduction or at appropriate places in the
-rest of the dissertation.
+% Basic introduction to transformer Models
+\section{Transformers}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=5cm]{test}
-    \caption[Test02a]
-    {Test02b}
-    \label{fig:test02}
-\end{figure}
+Transformer models are a type of deep learning architecture specifically designed to handle sequential data such as natural language.
+Unlike recurrent neural networks (RNNs) which process sequences one step at a time, transformers can analyse entire sequences of data in parallel.
+This is achieved through self-attention, where each token in a sequence can weigh and incorporate information from all other tokens.
+Such attention is calculated by adding positional encodings to input embeddings which transforms each token into query, key and value vectors.
+Some model architectures also use multi-head attention, where multiple query, key and value vectors are calculated.
+
+The first Transformer models were originally designed for encoder-decoder tasks such as translation, where an input sequence is encoded and decoded to an output sequence. 
+
+An encoder 
+Processes input sequence
+Contextualized hidden representation
+No access to future tokens
+
+Decoder
+Generates output tokens one-by-one
+Masked self-attation to prevent seeing future tokens
+
+Encoder-only models are typically used for classification and sentence embeddings.  
+
+Decoder-only 
+Used for autoregressive generation (language modelling, chatbots, coding assistants
+
+Transformers form the basis of modern natural language processing due to their scalability, parallelisation benefits, and excellent performance on long-range dependencies.
+
+What is an LLM?
+
+\subsection{Computation Steps}
+There are several compute steps involved in a Transformer model’s forward pass, during inference tasks.
+The process begins with Input Embedding and Positional Encoding where each token in the input sequence is converted into a vector, using a learned embedding matrix.
+Next, the model computes the Query (Q), Key (K) and Value (V) vectors for each token, this is calculated by projecting the input embeddings through learned linear transformations.
+Using the Q, K, and V values the model performs Scaled Dot-Product Attention 
+Models can also use Multi-Head Attention
+
+Instead of computing a single attention operation, the model splits the Q, K, and V matrices into multiple “heads”, concatenates the outputs 
+
+The Add and Normalisation steps follow attention
+-	The original input is added to the output and normalised
+
+Feed-Forward Network
+
+Stacked Layers
+
+Output
+
+Diagram of Transformer architecture
+
+\subsection{Prefill and Decode}
+We can separate the processing phases of LLM model inference steps into two distinct categories, with clear differences in hardware processing requirements.
+
+% Prefill
+The prefill stage processes the input tokens to compute the transformer model’s intermediate states.
+This includes calculating the positional embeddings and populating the KV cache, which are subsequently used to generate the first new token.
+
+This specific phase is easily parallelized because at every stage of computation (per token) the full input sequence is known.
+Hence, this is viewed as a matrix-matrix operation which can easily saturate a GPUs available compute.
+\textit{In reference to a transformer’s computation steps, all stages are performed for every token in the sequence but can be heavily parallelised.}
+
+% Decode
+The decode phase generates each output token one at a time, this is because each token computation is dependent on the previous token.
+Hence, each token must be calculated sequentially.
+The speed at which the decode phase can execute is heavily dependent on the speed at which weights, keys, values and activations can be loaded into the correct areas of GPU memory.
+Hence this phase usually saturates the memory bandwidth of a GPU before saturating the compute performance.
+\textit{In reference to a transformer’s computation steps, all stages are performed, but for only the new token generated - this is due key-value caching.}
+
+Diagram of Prefill vs Decode
+
+\subsection{Key Value caching}
+Key value caching is an optimisation used during inference steps for transformer-based decoder-only models such as GPT. This technique avoids recomputing the tensors for each input token for every decode token generated. Instead weights and key values are cached in GPU memory, to be used in the next iteration. At each decoding step the Q value of the new token is computed, reusing cached K and V values from earlier tokens in the sequence. This technique comes at the cost of using more GPU memory, reducing the maximum model size that theoretically could be loaded.
+
+Diagram of Key Value cache
+
+\subsection{Mixture of Experts}
+A neural network architecture specifically design to scale up models
+
+Instead of one big model
+Pool of expert networks
+For each input token, usually only a subset of these experts are activated
+Router chooses which experts to use based on the input
+
+Designed to be compute efficient
+Only the activate experts consume compute
+Allows for scaling up a model’s capacity (without linear increase in inference cost)
+
+Good
+Big model cpacpaity
+Better scling lwas
+Felxiblke
+
+Bad
+Routing instability
+Load balancing
+Complexity
+\subsection{DeepSeek Architecture}
+Text
+
+% What different parallelism techniques are available
+\section{Parallelism}
+
+\textbf{Data parallelism} refers to replicating a model across multiple processing units (GPUs/CPUs/TPUs), with each replica receiving a different slice of the input data.
+Hence, this technique is generally used to increase throughput of an overall system, especially in batched inference scenarios
+
+Example - batch of requests is split between 100 / 4 =25
+
+\textbf{Model parallelism} involves partitioning the model itself across several processing units, where each device is responsible for a portion of the model’s layers or operations. This is most helpful when a model cannot fit on a single device, due to memory demand greater than what is 
+
+Enables inference on devices that individually do not support
+
+Every forward pass requires synchronisation, introducing a communication overhead that may negatively impact latency
+
+Example
+
+\textbf{Tensor parallelism} is a specialised form of model parallelism, generally used with large deep learning models.
+
+Individual tensors are split across multiple devices (rather than whole layers
+
+Operator-Level parallelism
+Stuff
+
+\textbf{Expert Parallelism}
+Mixture of experts 
+
+Expert parallelism occurs when different experts are placed on different devices and are activated in parallel for 
+
+\textbf{Batching}
+Stuff 
+
+% Different technologies to build a scheduler (maybe need context on why talking about schedulers)
+\section{Scheduler}
+
+Optimisation techniques…
+
+\subsection{Heuristic-Based Methods}
+-	First-Come, First-Served (FCFS)
+-	Round Robin (RR)
+-	Min-Min / Max-Min
+-	Priority-Based
+-	Load Balancing (Best Fit, Worst Fit)
+
+\subsection{Metaheuristic Algorithms}
+-	Genetic Algorithms (GA)
+-	Particle Swarm Optimization (PSO)
+-	Ant Colony Optimisation (ACO)
+-	Simulated Annealing (SA)
+
+\subsection{Search-Based}
+Search-based Optimisation refers to methods that systematically or semi-randomly explore a given search space to find an optimal solution. Such techniques are often used to tune a scheduler’s parameters, but can also 
+
+Bayesian Optimisation (BO)
+
+Random Search
+Sample search space uniformly at random + evaluate
+Context - randomly generate candidate schedules, and pick the best one found
+Search space is significant
+
+Grid Search
+Brute force
+Discrete set of possible values for each parameter, then evaluates every combination
+Suffers from curse of dimensionality
+
+\subsection{Constraint Programming}
+Both Constraint Programming and Mathematical Optimisation approaches formulate scheduling activities as an optimisation problem, with formal mathematical constraints and objectives.
+
+Linear Programming (LP) techniques can solve scheduler problems where the constraints and objectives can be modelled as only linear. All decision variables are continuous and can be used in scheduling algorithms when fractional assignments of work are valid.
+
+Mixed Integer Linear Programming (MILP) solvers can consider integer variables such as binary assignment values, extending LP. In the context of scheduling, this enables decisions to be modelled using yes/no decisions and combinatorial choices.
+
+In the case where constraints cannot be as linear, Non-Linear Programming (NLP) can model problems where either the objective and/or constraints are non-linear functions. Given problems are non-linear, it is harder to guarantee a globally optimal solution is generated.
+
+Mixed Integer Programming (MIP)
