@@ -1,0 +1,64 @@
+% How requests will be modeled
+\clearpage
+
+\section{Workload Modeling}
+\label{chap:workload-modeling}
+
+Statistical distributions (available from sources)
+
+\subsection{Input Sequence Length}
+To achieve more fine-grained control of request scheduling, dependant on input sequence, we model the input request length as a probability distribution.
+Hence, for a chosen workload type, there is a specific probability of request arriving with given sequence length.
+
+Let $w \in W$ denote a workload type from the set of all workload types $W$.
+For each workload type $w$, we define a probability mass function $p(s \mid w)$, which represents the probability of a request having sequence length $s \in S$ under workload $w$.
+This distribution satisfies:
+
+\[
+\sum_{s \in S} p(s \mid w) = 1 \quad \text{for all } w \in W
+\]
+
+% Equation of PDF
+
+% Graph of PDF
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=\textwidth]{sample.pdf}
+%    \caption[Sample probability distribution for input sequence lengtht]
+%    {Sample probability distribution for input sequence length}
+%    \label{fig:04-sample-pdf}
+%\end{figure}
+
+Instead of only considering the distribution of sequence lengths during assignment, to model system throughput, we use them to find the most optimal pairing of sequence length to GPU island.
+Therefore, specific GPU islands can be configured to most optimally perform prefill operations for a specific sequence length.
+When a request arrives, we can direct it to the GPU islands targeted to serve that request length, defined in the schedule.
+
+% Graph of sequence length vs GPU
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=\textwidth]{sample.pdf}
+%    \caption[Stuff]
+%    {Stuff}
+%    \label{fig:04-sequence-length-gpu}
+%\end{figure}
+
+\subsection{Decode Length}
+While decode length can also be modelled using a probability density function, this information (specific distribution) is less useful from a scheduling perspective.
+In contrast to input sequence length, the decode length is not known the moment a request arrives.
+Instead, the generation process proceeds token-by-token until an explicit or implicit stop condition is met (e.g. end-of-sequence token). 
+
+We can assume that a decode request must complete on the GPU island it started processing on, as switching island would incur additional communication overhead and significantly impact the request response time. %Why?
+
+For some workloads there is a small correlation between input sequence length and decode length, but this relationship is often not significant. %Example?
+Therefore, at the point of request arrival we do not have enough information about the decode length to make informed per-decode length scheduling decisions.
+
+Hence, creating specific GPU configurations for short, medium, long, etc. decode lengths would likely be inefficient. 
+As we cannot accurately predict decode length, there is a high probability that a decode request would have to move island.
+
+Prior work has demonstrated that it can be possible to predict decode length using the input text contents. %Reference?
+
+Instead, we model our scheduler using an average decode length for a given workload type and design every GPU decode island to support the maximum decode length expected. 
+Unlike the sequence length, the decode length is simply being used for system modelling activities to characterise performance, not direct traffic.
+
+However, we can still make scheduling decisions for the decode phase using the sequence length as a feature, given the maximum decode length affected by the input length.
+This is due to all the input and decode tokens KV values being stored in GPU memory.

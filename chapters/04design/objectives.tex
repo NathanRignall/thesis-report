@@ -1,0 +1,80 @@
+% Objectives
+\clearpage
+
+\section{Objectives}
+
+%We will use requests per second as our measure of throughput for the overall system as it can be used as an overall measure of performance
+%
+%encouraging a cost effective solution
+
+
+\subsection{Throughput}
+
+Demonstrated in \autoref{chap:simulator-usage}, the Shallowsim simulator has support for estimating the throughput of a single request of a static input sequence and decode length.
+It is highly improbable that an entire workload consists of a single request type, instead we expect a distribution of sequence lengths, as shown in \autoref{chap:workload-modeling}.
+Hence, we need a method to accurately calculate the throughput of a system, with a variety of input sequence.
+
+Using the probability distribution of the workload, we can compute the weighted average of throughput, using measured performance values for each sequence length.
+Let $R_{\text{prefill}}(s)$ denote the measured prefill throughput (in requests per second) for a request of sequence length $s$.
+The expected prefill throughput for workload $w$, denoted $\mathbb{E}[R_{\text{prefill}} \mid w]$ (expectation), is then given by:
+
+\[
+\mathbb{E}[R_{\text{prefill}} \mid w] = \sum_{s \in S} R_{\text{prefill}}(s) \cdot p(s \mid w)
+\]
+
+In addition to prefill, we can also compute the expected throughput for the decode phase. 
+While prefill throughput depends solely on the input sequence length $s$, decode throughput typically depends on both the input length $s$ and the output (decode) length $d$.
+For simplicity, we assume a fixed average decode length $d$ as a parameter.
+Let $R_{\text{decode}}(s, d)$ denote the measured decode throughput (in requests per second) for an input sequence length $s$ and average decode length $d$.
+Given a workload-specific sequence length distribution $p(s \mid w)$, the expected decode throughput for workload $w$ is:
+
+\[
+\mathbb{E}[R_{\text{decode}} \mid w, d] = \sum_{s \in S} R_{\text{decode}}(s, d) \cdot p(s \mid w)
+\]
+
+To account for the complete request processing pipeline, we define the overall expected throughput as the minimum of the expected prefill and decode throughputs.
+Since requests cannot be served faster than the slowest stage, the effective throughput is bounded by the bottleneck.
+Let $\mathbb{E}[R_{\text{prefill}} \mid w]$ denote the expected prefill throughput for workload $w$, and $\mathbb{E}[R_{\text{decode}} \mid w, d]$ the expected decode throughput for workload $w$ and average decode length $d$.
+The overall expected throughput is given by:
+
+\[
+\mathbb{E}[R_{\text{overall}} \mid w, d] = \min\left( \mathbb{E}[R_{\text{prefill}} \mid w],\ \mathbb{E}[R_{\text{decode}} \mid w, d] \right)
+\]
+
+This value represents the effective throughput achievable by the system under the given workload and output length assumptions.
+
+%Formally, let $s$ denote the sequence length, $S$ the set of all possible sequence lengths, $p(s)$ the probability of observing a request of length $s$, and $R_{\text{prefill}}(s)$ the measured prefill throughput at that length (in requests per second).
+%The expected prefill throughput, denoted by $\mathbb{E}[R_{\text{prefill}}]$, is then given by the following expression:
+%\[
+%\mathbb{E}[R_{\text{prefill}}] = \sum_{s \in S} R_{\text{prefill}}(s) \cdot p(s)
+%\]
+
+\subsection{Percent Allocation}
+
+Previous calculations assumed that a singular GPU island is contributing to the overall throughput of the system.
+In reality, we would like to be able to construct several GPU islands and assign each island to a request type it is best suited for.
+Hence, we allocate a percentage of GPU resources for a given island to a given sequence length it specialises in.
+Let \(I\) be the set of all GPU islands in the system, which we partition into two separate subsets \(I_{\mathrm{prefill}}\) and \(I_{\mathrm{decode}}\).
+Let \(x_i(s)\) denote the fraction of overall GPU capacity on island \(i\) devoted to handling requests of length \(s\). 
+We normalise these allocations so that
+\[
+\sum_{s\in S} x_i(s) = 1
+\quad\text{for every }i\in I.
+\]
+By including \(x_i(s)\) into our previous per-length throughput models, the expected prefill throughput under workload \(w\) becomes
+\[
+\mathbb{E}[R_{\mathrm{prefill}}\mid w]
+=\sum_{i\in I_{\mathrm{prefill}}}\sum_{s\in S}
+x_i(s)\,R_{\mathrm{prefill}}^{(i)}(s)\,p(s\mid w),
+\]
+while the expected decode throughput for average decode length \(d\) is
+\[
+\mathbb{E}[R_{\mathrm{decode}}\mid w,d]
+=\sum_{i\in I_{\mathrm{decode}}}\sum_{s\in S}
+x_i(s)\,R_{\mathrm{decode}}^{(i)}(s,d)\,p(s\mid w).
+\]
+Since end‐to‐end request processing cannot exceed its slowest stage, the overall expected throughput is simply the bottleneck of these two values:
+\[
+\mathbb{E}[R_{\mathrm{overall}}\mid w,d]
+=\min\bigl(\mathbb{E}[R_{\mathrm{prefill}}\mid w],\;\mathbb{E}[R_{\mathrm{decode}}\mid w,d]\bigr).
+\]

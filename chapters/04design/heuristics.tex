@@ -1,0 +1,57 @@
+% Heuristics used
+\clearpage
+
+\section{Scheduling Assumptions}
+
+We can make several assertions and assumptions in an attempt to reduce the search space of the scheduler generation process.
+These effectively apply heuristics to our problem, that are well crafted to simplify the computation requirements while retaining solution quality.
+
+\subsection{Resolution}
+We can use the simulator to benchmark the prefill and decode throughput of an island for a given input sequence length.
+While it is feasible to consider each sequence length individually, we can use a binning approach to reduce the search space of the scheduler.
+The width of the bins effectively controls the resolution of the solution generated, which can be dynamically adjusted depending on input parameters.
+
+% Graph of binning techniques/resolution
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=\textwidth]{sample.pdf}
+%    \caption[Stuff]
+%    {Stuff}
+%    \label{fig:04-sequence-length-binning}
+%\end{figure}
+
+%Single graph displaying throughput of prefill and decode for specific GPU (Not sure what this is for)
+
+\subsection{Optimal Parallelism}
+To further reduce the search space of the scheduler, we can assume for a given model and GPU type, there exists an optimal parallelism configuration that is consistent across input sequence lengths.
+Demonstrated in \autoref{fig:04-prefill-throughput-vs-sequence-length} we can see that for all GPUs, $tp=64$ and $dp=1$ is the fastest parallelism configuration for all sequence lengths above 128 tokens.
+Given we expect the majority of input requests to be over 128 tokens, we can reason that there is  an \textit{optimal} GPU prefill configuration.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{simulator_prefill_throughput_vs_seq_len.pdf}
+    \caption[Stuff]
+    {Stuff}
+    \label{fig:04-prefill-throughput-vs-sequence-length}
+\end{figure}
+
+By pre-computing this optimal configuration, we significantly reduce the number of parameters considered by the scheduler.
+This is because an island cannot be formed with several different parallelism configurations simultaneously. %Why?
+And hence, the scheduler would have to contain a variable for each sequence-length-parallelism combination.
+
+\section{Inner Solver}
+
+Treating the 
+
+\section{Outer Optimiser}
+
+Stuff
+
+% THIS IS USEFUL TEXT - BUT BETTER FOR LATER
+
+%When profiling a specific GPU island for a given sequence length (for scheduling), the exact parallelism configuration of the GPUs must be known.
+%Hence, we must first benchmark the GPU island across a range of sequence lengths that we expect to receive in our workload and determine the optimal parallelism configuration.
+
+%While it is possible that the optimal parallelism configuration for a set of GPUs is different across a range of sequence lengths, we can assume that the best configurations are within a few percent of each other.
+
+%We can integrate this benchmark parallelism selection step with the profiling step for the constraint solver to save computation requests
