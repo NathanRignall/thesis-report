@@ -2,6 +2,7 @@
 \clearpage
 
 \section{Constraint Optimisation}
+\label{chap:constraint-optimisation}
 
 We can combine the previous throughput calculations to form a simple constraint optimisation problem with an objective to maximise the total expected throughput $R$ and minimise the deviation $\Delta$ from the target workload distribution $p(s\mid w)$.
 
@@ -76,34 +77,3 @@ R = \sum_{i\in I}\sum_{s\in S}b_i(s)\,x_i(s),
 \quad
 \sigma_s = \frac{\sum_{i\in I}b_i(s)\,x_i(s)}{R}.
 \]
-
-
-
-%\subsubsection*{Intermediate Variables}
-%\begin{enumerate}
-%  \item \textbf{Performance per cell}
-%  \[
-%    r_i(s) = b_i(s)\,x_i(s).
-%  \]
-%  \item \textbf{Total performance}
-%  \[
-%    R = \sum_{i\in I}\sum_{s\in S}r_i(s)
-%      = \sum_{i\in I}\sum_{s\in S}b_i(s)\,x_i(s).
-%  \]
-%  \item \textbf{Performance by length}
-%  \[
-%    R_s = \sum_{i\in I}r_i(s)
-%        = \sum_{i\in I}b_i(s)\,x_i(s),
-%    \quad\forall\,s\in S.
-%  \]
-%  \item \textbf{Achieved share}
-%  \[
-%    \sigma_s = \frac{R_s}{R}.
-%  \]
-%  \item \textbf{Deviation from target}
-%  \[
-%    \delta_s = \lvert\,\sigma_s - p(s\mid w)\rvert,
-%    \qquad
-%    \Delta = \sum_{s\in S}\delta_s.
-%  \]
-%\end{enumerate}
