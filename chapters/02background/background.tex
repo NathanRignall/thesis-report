@@ -61,7 +61,7 @@ Stacked Layers
 
 Output
 
-Diagram of Transformer architecture
+%Diagram of Transformer architecture
 
 \subsection{Prefill and Decode}
 We can separate the processing phases of LLM model inference steps into two distinct categories, with clear differences in hardware processing requirements.
@@ -81,12 +81,12 @@ The speed at which the decode phase can execute is heavily dependent on the spee
 Hence this phase usually saturates the memory bandwidth of a GPU before saturating the compute performance.
 \textit{In reference to a transformer’s computation steps, all stages are performed, but for only the new token generated - this is due key-value caching.}
 
-Diagram of Prefill vs Decode
+%Diagram of Prefill vs Decode
 
 \subsection{Key Value caching}
 Key value caching is an optimisation used during inference steps for transformer-based decoder-only models such as GPT. This technique avoids recomputing the tensors for each input token for every decode token generated. Instead weights and key values are cached in GPU memory, to be used in the next iteration. At each decoding step the Q value of the new token is computed, reusing cached K and V values from earlier tokens in the sequence. This technique comes at the cost of using more GPU memory, reducing the maximum model size that theoretically could be loaded.
 
-Diagram of Key Value cache
+%Diagram of Key Value cache
 
 \subsection{Mixture of Experts}
 A neural network architecture specifically design to scale up models
@@ -108,9 +108,14 @@ Felxiblke
 Bad
 Routing instability
 Load balancing
-Complexity
+Complexity
+
+% How this problem is different for MoE
 \subsection{DeepSeek Architecture}
-Text
+
+Some information about the DeepSeek architecture.
+
+Focus on MoE, A2A etc.
 
 % What different parallelism techniques are available
 \section{Parallelism}
@@ -141,48 +146,74 @@ Mixture of experts
 Expert parallelism occurs when different experts are placed on different devices and are activated in parallel for 
 
 \textbf{Batching}
-Stuff 
 
-% Different technologies to build a scheduler (maybe need context on why talking about schedulers)
+What are the different types of batching, how does this affect the overall performance on the system?
+Focus on latency, 99th percentile 
+
+% Different technologies to build a scheduler 
 \section{Scheduler}
+
+(maybe need context on why talking about schedulers)
 
 Optimisation techniques…
 
+% Heuristic
 \subsection{Heuristic-Based Methods}
--	First-Come, First-Served (FCFS)
--	Round Robin (RR)
--	Min-Min / Max-Min
--	Priority-Based
--	Load Balancing (Best Fit, Worst Fit)
 
+What is this kind of technique?
+
+\textbf{First-Come, First-Served (FCFS)} is...
+
+\textbf{Round Robin (RR)} is...
+
+\textbf{Min-Min / Max-Min} is...
+
+\textbf{Priority-Based} is...
+
+\textbf{Load Balancing (Best Fit, Worst Fit)} is...
+
+% Metaheuristic
 \subsection{Metaheuristic Algorithms}
--	Genetic Algorithms (GA)
--	Particle Swarm Optimization (PSO)
--	Ant Colony Optimisation (ACO)
--	Simulated Annealing (SA)
 
+An intro...
+
+\textbf{Genetic Algorithms (GA)} is...
+
+\textbf{Particle Swarm Optimization (PSO)} is...
+
+\textbf{Ant Colony Optimisation (ACO)} is...
+
+\textbf{Simulated Annealing (SA)} is...
+
+% Search
 \subsection{Search-Based}
 Search-based Optimisation refers to methods that systematically or semi-randomly explore a given search space to find an optimal solution. Such techniques are often used to tune a scheduler’s parameters, but can also 
 
-Bayesian Optimisation (BO)
+\textbf{Bayesian Optimisation (BO)}
+Aquastition function
+Approximate function
 
-Random Search
+\textbf{Random Search}
 Sample search space uniformly at random + evaluate
 Context - randomly generate candidate schedules, and pick the best one found
 Search space is significant
 
-Grid Search
+\textbf{Grid Search}
 Brute force
 Discrete set of possible values for each parameter, then evaluates every combination
 Suffers from curse of dimensionality
 
+% Constraint
 \subsection{Constraint Programming}
 Both Constraint Programming and Mathematical Optimisation approaches formulate scheduling activities as an optimisation problem, with formal mathematical constraints and objectives.
 
-Linear Programming (LP) techniques can solve scheduler problems where the constraints and objectives can be modelled as only linear. All decision variables are continuous and can be used in scheduling algorithms when fractional assignments of work are valid.
+\textbf{Linear Programming (LP)} techniques can solve scheduler problems where the constraints and objectives can be modelled as only linear.
+All decision variables are continuous and can be used in scheduling algorithms when fractional assignments of work are valid.
 
-Mixed Integer Linear Programming (MILP) solvers can consider integer variables such as binary assignment values, extending LP. In the context of scheduling, this enables decisions to be modelled using yes/no decisions and combinatorial choices.
+\textbf{Mixed Integer Linear Programming (MILP)} solvers can consider integer variables such as binary assignment values, extending LP.
+In the context of scheduling, this enables decisions to be modelled using yes/no decisions and combinatorial choices.
 
-In the case where constraints cannot be as linear, Non-Linear Programming (NLP) can model problems where either the objective and/or constraints are non-linear functions. Given problems are non-linear, it is harder to guarantee a globally optimal solution is generated.
+In the case where constraints cannot be as linear, \textbf{Non-Linear Programming (NLP)} can model problems where either the objective and/or constraints are non-linear functions.
+Given problems are non-linear, it is harder to guarantee a globally optimal solution is generated.
 
-Mixed Integer Programming (MIP)
+\textbf{Mixed Integer Programming (MIP)} is...

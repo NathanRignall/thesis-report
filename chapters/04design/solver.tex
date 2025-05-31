@@ -1,12 +1,10 @@
 % Constraints
-\clearpage
-
 \section{Constraint Optimisation}
 \label{chap:constraint-optimisation}
 
 We can combine the previous throughput calculations to form a simple constraint optimisation problem with an objective to maximise the total expected throughput $R$ and minimise the deviation $\Delta$ from the target workload distribution $p(s\mid w)$.
 
-\subsection{Non-Linear Problem}
+\subsection{Problem Formulation}
 
 The following statement describes a sample non-linear optimisation problem that can be solved for either prefill or decode throughput.
 
@@ -77,3 +75,7 @@ R = \sum_{i\in I}\sum_{s\in S}b_i(s)\,x_i(s),
 \quad
 \sigma_s = \frac{\sum_{i\in I}b_i(s)\,x_i(s)}{R}.
 \]
+
+\subsection{Applicable Solvers}
+
+Non-linear.

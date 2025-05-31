@@ -2,7 +2,7 @@
 \section{Scheduling Assumptions}
 
 We can make several assertions and assumptions in an attempt to reduce the search space of the scheduler generation process.
-These effectively apply heuristics to our problem, that are well crafted to simplify the computation requirements while retaining solution quality.
+These effectively apply heuristics to our problem, that are crafted to simplify the computation requirements while retaining solution quality.
 
 \subsection{Prefill Parallelism}
 \label{chap:prefill-parallelism}
@@ -18,6 +18,8 @@ Given we expect the majority of input requests to be over 128 tokens, we can rea
     {Stuff}
     \label{fig:04-prefill-throughput-vs-sequence-length}
 \end{figure}
+
+% Add some explanations of the graph
 
 By pre-computing this optimal configuration, we significantly reduce the number of parameters considered by the scheduler.
 This is because an island cannot be formed with several different parallelism configurations simultaneously. %Why?
@@ -130,15 +132,80 @@ Configurations with zero throughput are due to the configuration exceeding the m
     \label{fig:04-decode-throughput-vs-sequence-length}
 \end{figure}
 
-The graphs of \autoref{fig:04-decode-throughput-vs-sequence-length} also demonstrate the need for herogneaity.
+The graphs of \autoref{fig:04-decode-throughput-vs-sequence-length} also demonstrate the advantages of heterogeneity.
 
-\subsection{Resolution}
+% Add some explanations of the graph 
+
+\subsection{Solver Resolution}
 \label{chap:resolution}
 
 We can use the simulator to benchmark the prefill and decode throughput of an island for a given input sequence length.
-While it is feasible to consider each sequence length individually, we can use a binning approach to reduce the search space of the scheduler.
-The width of the bins effectively controls the resolution of the solution generated, which can be dynamically adjusted depending on input parameters.
+While it is feasible to consider each sequence length  (\(s\in S\)) individually, we can use a binning approach to reduce the search space of the scheduler.
+The width of the ranges effectively control the resolution of the solution generated, which can be dynamically adjusted depending on input parameters.
 This further reduces the solution space of the constraint optimisation problem.
+
+We partition the sorted list of lengths \(S\) into equally‐sized intervals of width \(W\), called \textit{ranges}.
+Rather than measure every \(s_i\), we sample a single representative length from each range at its midpoint.
+With a positive integer width \(W\), we compute the midpoint offset as \(\mathrm{mid} = \left\lfloor \tfrac{W}{2}\right\rfloor\).
+For each integer \(k\) such that \(0 \le k < \lfloor \lvert S\rvert / W\rfloor\), we let 
+\[
+\mathrm{range\_start}_k = k\,W,\quad
+\mathrm{range\_end}_k = k\,W + W,\quad
+\mathrm{range\_mid}_k = \mathrm{range\_start}_k + \mathrm{mid},
+\]
+and take \(s_{\mathrm{range\_mid}_k}\) as the representative length for the \(k\)-th range. We then compute the total probability of that range by summing 
+\[
+p_k = \sum_{i = \mathrm{range\_start}_k}^{\mathrm{range\_end}_k - 1} p\bigl(s_i \mid w\bigr),
+\]
+and record for range \(k\) the tuple \(\bigl(\mathrm{range\_mid}_k,\,p_k,\,\mathrm{range\_start}_k,\,\mathrm{range\_end}_k\bigr)\). Therefore, the set of all ranges is 
+\[
+\mathcal{R} = \bigl\{\,(\mathrm{range\_mid}_k,\,p_k,\,\mathrm{range\_start}_k,\,\mathrm{range\_end}_k)\mid 0 \le k < \lfloor \lvert S\rvert / W\rfloor \bigr\}.
+\]
+By sampling only at these midpoints and aggregating probabilities, we approximate the full set of sequence lengths in each range with a single point (\(\mathrm{range\_mid}_k\)), thereby greatly reducing the number of simulator calls while preserving workload‐weighted accuracy.
+
+\subsubsection*{Prefill Throughput}
+
+With the formed ranges \(\mathcal{R}\), each with their representative length \(s_r\) and total probability \(p_r\), we can redefine the allocation variables \(x_i(s)\) to act at the range level. 
+Now island \(i\) assigns fraction \(x_i(r)\) of its GPU capacity to range \(r\in\mathcal{R}\), with
+\[
+\sum_{r\in\mathcal{R}} x_i(r) = 1,
+\qquad
+x_i(r)\ge0\quad\forall\,i\in I,\;r\in\mathcal{R}.
+\]
+Within range \(r\), every sequence length \(s\in S_r\) is approximated by \(s_r\), so that
+\[
+\sum_{s\in S_r} R_{\mathrm{prefill}}^{(i)}(s)\,p(s\mid w)\;\approx\;
+R_{\mathrm{prefill}}^{(i)}(s_r)\;\sum_{s\in S_r}p(s\mid w)
+\;=\;
+R_{\mathrm{prefill}}^{(i)}(s_r)\,p_r.
+\]
+By including \(x_i(r)\) into our per‐range throughput models, the expected prefill throughput under workload \(w\) becomes
+\[
+\mathbb{E}[R_{\mathrm{prefill}}\mid w]
+=\sum_{i\in I_{\mathrm{prefill}}}\sum_{r\in\mathcal{R}}
+x_i(r)\;R_{\mathrm{prefill}}^{(i)}(s_r)\;p_r.
+\]
+
+\subsubsection*{Decode Throughput}
+
+The same approach applies to the decode phase.
+For each range \(r\) with representative length \(s_r\) and probability \(p_r\), we measure the decode throughput \(R_{\mathrm{decode}}^{(i)}\bigl(s_r,d\bigr)\) on island \(i\) for average decode length \(d\).
+Island \(i\) allocates fraction \(x_i(r)\) of its capacity to \(r\), and within that range every sequence length is approximated by \(s_r\).  Thus,
+\[
+\sum_{s\in S_r} R_{\mathrm{decode}}^{(i)}(s,d)\,p(s\mid w)\;\approx\;
+R_{\mathrm{decode}}^{(i)}(s_r,d)\;p_r.
+\]
+Normalising \(x_i(r)\) as before and summing over islands and ranges yields the expected decode throughput under workload \(w\) and decode length \(d\):
+\[
+\mathbb{E}[R_{\mathrm{decode}}\mid w,d]
+=\sum_{i\in I_{\mathrm{decode}}}\sum_{r\in\mathcal{R}}
+x_i(r)\;R_{\mathrm{decode}}^{(i)}\bigl(s_r,d\bigr)\;p_r.
+\]
+The overall expected throughput remains
+\[
+\mathbb{E}[R_{\mathrm{overall}}\mid w,d]
+=\min\bigl(\mathbb{E}[R_{\mathrm{prefill}}\mid w],\;\mathbb{E}[R_{\mathrm{decode}}\mid w,d]\bigr).
+\]
 
 % Graph of binning techniques/resolution
 %\begin{figure}[ht]
@@ -151,11 +218,12 @@ This further reduces the solution space of the constraint optimisation problem.
 
 %Single graph displaying throughput of prefill and decode for specific GPU (Not sure what this is for)
 
+\clearpage
 \section{Inner Solver}
 
 The inner solver brings together the optimum parallelism section from \autoref{chap:prefill-parallelism} and \autoref{chap:decode-parallelism}.
 
-Uses the constraint optimisation problem from \autoref{chap:constraint-optimisation}
+Uses the constraint optimisation problem from \autoref{chap:constraint-optimisation}.
 
 \section{Outer Optimiser}
 
