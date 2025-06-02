@@ -1,21 +1,21 @@
 % Heuristics used
 \section{Scheduling Assumptions}
 
-We can make several assertions and assumptions in an attempt to reduce the search space of the scheduler generation process.
+Before finalising a scheduler architecture, we can make several assertions and assumptions in an attempt to reduce the search space of the scheduler generation process.
 These effectively apply heuristics to our problem, that are crafted to simplify the computation requirements while retaining solution quality.
 
 \subsection{Prefill Parallelism}
 \label{chap:prefill-parallelism}
 
-To reduce the search space of the scheduler, we can assume for a given model and GPU type, there exists an optimal parallelism configuration that is consistent across input sequence lengths.
+We can assume for a given model and GPU type, there exists an optimal parallelism configuration that is consistent across input sequence lengths.
 Demonstrated in \autoref{fig:04-prefill-throughput-vs-sequence-length} we can see that for all GPUs, $tp=64$ and $dp=1$ is the fastest parallelism configuration for all sequence lengths above 128 tokens.
-Given we expect the majority of input requests to be over 128 tokens, we can reason that there is an \textit{optimal} GPU prefill configuration.
+Given we expect the majority of input requests to be over 128 tokens, we can reason that there is an \textit{optimal} GPU prefill configuration for each GPU type.
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{simulator_prefill_throughput_vs_seq_len.pdf}
-    \caption[Stuff]
-    {Stuff}
+    \caption[Selection of GPUs benchmarked over the prefill stage using the \textit{Shallowsim} simulator]
+    {Selection of GPUs benchmarked over the prefill stage, with a variety of parallelism configurations using the \textit{Shallowsim} simulator. All configurations use a static number of GPUs (64).}
     \label{fig:04-prefill-throughput-vs-sequence-length}
 \end{figure}
 
@@ -23,7 +23,7 @@ Given we expect the majority of input requests to be over 128 tokens, we can rea
 
 By pre-computing this optimal configuration, we significantly reduce the number of parameters considered by the scheduler.
 This is because an island cannot be formed with several different parallelism configurations simultaneously. %Why?
-And hence, the scheduler would have to contain a variable for each sequence-length-parallelism combination.
+And hence, the scheduler does not have to contain a variable for (and consider) each sequence-length-parallelism combination.
 
 To identify a best GPU prefill configuration across sequence lengths we use the following calculations, let \(G\) be the total number of GPUs and consider the set of all parallelism configurations $C = \{\,c = (\mathit{tp},\mathit{dp}) \mid \mathit{tp}\cdot\mathit{dp} = G\}$.
 For each configuration \(c\in C\) and sequence length \(s\in S\), we measure the prefill throughput \(R_{\mathrm{prefill}}(s,c)\) and define the optimal throughput at length \(s\) by
@@ -45,7 +45,7 @@ Aggregating these deviations over all lengths gives
 \]
 Finally, the best overall configuration is chosen as the one minimising the average deviation from the individual best configurations.
 \[
-c_{\mathrm{base}} = \arg\min_{c\in C} \bar{\delta}(c).
+c_{\mathrm{best}} = \arg\min_{c\in C} \widetilde{\delta}(c).
 \]
 
 \subsection{Decode Parallelism}
@@ -53,8 +53,8 @@ c_{\mathrm{base}} = \arg\min_{c\in C} \bar{\delta}(c).
 
 We can compute the same best configuration for the decode phase, with small modifications to the set of $C$ configurations taking into account mixture-of-experts.
 Unlike prefill, \(dp\) (the data‐parallelism factor) is not a native parameter of the Shallowsim simulator.
-Instead, we precompute how many GPUs to pass to the simulator and then scale the resultant throughput by \(dp\).
-Let \(G\) be the total number of GPUs, \(tp\) tensor parallelism factor, and \(n_r\) the total number of routed experts in the model.
+Instead, we pre-compute how many GPUs to pass to the simulator and then scale the resultant throughput by \(dp\).
+Let \(G\) be the total number of GPUs, \(tp\) tensor parallelism factor, and \(n\) the total number of routed experts in the model.
 We can form every pairing of valid factors using:
 \[
 T = \{\,tp \in \{1,\dots,G\}\mid G \bmod tp = 0\}, 
@@ -68,7 +68,7 @@ For each \((tp,dp)\in C'\), set
 \[
 G_{\mathrm{sim}} = \frac{G}{dp},
 \qquad
-ep = \Bigl\lceil \tfrac{n_r}{G_{\mathrm{sim}}}\Bigr\rceil,
+ep = \Bigl\lceil \tfrac{n}{G_{\mathrm{sim}}}\Bigr\rceil,
 \]
 and define the simulator configuration 
 \[
@@ -86,17 +86,20 @@ R_{\mathrm{prefill}}(s;\,dp,c)
 = dp \times R_{\mathrm{prefill}}\!\Bigl(s;\,\tfrac{G}{dp},\,tp,\,ep\Bigr).
 \]
 
-However, before calculating the best parallelism configuration out of the set, we also need to decide which batch size to use.
+Before calculating the best parallelism configuration out of the set, we also need to decide which batch size to use.
 Since we would like to optimise our configuration for overall throughput, we need to maximise the batch size for each input sequence length, such that we remain within the memory constraints of the island.
 Let \(\max\_bs(s; c)\) denote the maximum batch size returned by the simulator for sequence length \(s\) under configuration \(c\).
-We then round down to the nearest multiple of 8 and clamp between 8 and 1024:
+We then round down to the nearest multiple of 8 and clamp between 8 and 1024 to keep the batch size aligned to the GPU memory and compute capabilities.
+This ensures efficient hardware utilisation and avoids potential performance degradation caused by unaligned memory access or suboptimal parallelism.
+
+% Need to explain why doing this for 8 (reference)
 
 \[
 \mathrm{bs}(s;c)
 = \min\!\Bigl(\max\bigl(\max\_bs(s;c) - \bigl(\max\_bs(s;c) \bmod 8\bigr),\,8\bigr),\,1024\Bigr).
 \]
 
-Similar to prefill, we seek a single “best” decode parallelism configuration across sequence lengths. 
+Similar to prefill, we seek a single best decode parallelism configuration across sequence lengths. 
 For each simulator configuration \(c\in C\) and sequence length \(s\), we first compute the batch size \(\mathrm{bs}(s;c)\) as before, then measure the decode throughput $R_{\mathrm{decode}}\bigl(s, d;\,c, \mathrm{bs}(s;c)\bigr)$.
 We define the optimal decode throughput at length \(s\) by
 \[
@@ -117,22 +120,23 @@ Aggregating these deviations over all lengths gives
 \]
 We can then select the decode configuration that minimises the average deviation across all expected sequence lengths,
 \[
-c_{\mathrm{decode}} = \arg\min_{c\in C}\bar{\delta}_{\mathrm{decode}}(c).
+c_{\mathrm{decode}} = \arg\min_{c\in C}\widetilde{\delta}_{\mathrm{decode}}(c).
 \]
 
-Shown in \autoref{fig:04-decode-throughput-vs-sequence-length}, for each GPU there is visibly a better parallelism configuration for most sequence lengths.
+Shown in \autoref{fig:04-decode-throughput-vs-sequence-length}, for each GPU there is generally a better parallelism configuration for most sequence lengths.
 Unlike prefill, this configuration is not consistent across GPU types, but rather significantly impacted by the GPU specifications.
+% This is because the decode stage can be parallelised with batching 
 Configurations with zero throughput are due to the configuration exceeding the memory capabilities of the cluster.
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{simulator_decode_throughput_vs_seq_len.pdf}
-    \caption[Stuff]
-    {Stuff}
+    \caption[Selection of GPUs benchmarked over the decode stage using the \textit{Shallowsim} simulator]
+    {Selection of GPUs benchmarked over the decode stage, with a variety of parallelism configurations using the \textit{Shallowsim} simulator. All configurations use a static number of GPUs (64).}
     \label{fig:04-decode-throughput-vs-sequence-length}
 \end{figure}
 
-The graphs of \autoref{fig:04-decode-throughput-vs-sequence-length} also demonstrate the advantages of heterogeneity.
+%The graphs of \autoref{fig:04-decode-throughput-vs-sequence-length} also demonstrate the advantages of heterogeneity.
 
 % Add some explanations of the graph 
 
@@ -140,9 +144,8 @@ The graphs of \autoref{fig:04-decode-throughput-vs-sequence-length} also demonst
 \label{chap:resolution}
 
 We can use the simulator to benchmark the prefill and decode throughput of an island for a given input sequence length.
-While it is feasible to consider each sequence length  (\(s\in S\)) individually, we can use a binning approach to reduce the search space of the scheduler.
+While it is feasible to consider each sequence length  (\(s\in S\)) individually (in our optimisation problem), we can use a binning approach to reduce the search space of the scheduler.
 The width of the ranges effectively control the resolution of the solution generated, which can be dynamically adjusted depending on input parameters.
-This further reduces the solution space of the constraint optimisation problem.
 
 We partition the sorted list of lengths \(S\) into equally‐sized intervals of width \(W\), called \textit{ranges}.
 Rather than measure every \(s_i\), we sample a single representative length from each range at its midpoint.
@@ -153,7 +156,7 @@ For each integer \(k\) such that \(0 \le k < \lfloor \lvert S\rvert / W\rfloor\)
 \mathrm{range\_end}_k = k\,W + W,\quad
 \mathrm{range\_mid}_k = \mathrm{range\_start}_k + \mathrm{mid},
 \]
-and take \(s_{\mathrm{range\_mid}_k}\) as the representative length for the \(k\)-th range. We then compute the total probability of that range by summing 
+and take \(\mathrm{range\_mid}_k\) as the representative length for the \(k\)-th range. We then also compute the total probability of that range by summing 
 \[
 p_k = \sum_{i = \mathrm{range\_start}_k}^{\mathrm{range\_end}_k - 1} p\bigl(s_i \mid w\bigr),
 \]
@@ -162,6 +165,8 @@ and record for range \(k\) the tuple \(\bigl(\mathrm{range\_mid}_k,\,p_k,\,\math
 \mathcal{R} = \bigl\{\,(\mathrm{range\_mid}_k,\,p_k,\,\mathrm{range\_start}_k,\,\mathrm{range\_end}_k)\mid 0 \le k < \lfloor \lvert S\rvert / W\rfloor \bigr\}.
 \]
 By sampling only at these midpoints and aggregating probabilities, we approximate the full set of sequence lengths in each range with a single point (\(\mathrm{range\_mid}_k\)), thereby greatly reducing the number of simulator calls while preserving workload‐weighted accuracy.
+
+% Display a graph of the binning (probably trace pdf sample but binned).
 
 \subsubsection*{Prefill Throughput}
 
@@ -207,118 +212,7 @@ The overall expected throughput remains
 =\min\bigl(\mathbb{E}[R_{\mathrm{prefill}}\mid w],\;\mathbb{E}[R_{\mathrm{decode}}\mid w,d]\bigr).
 \]
 
-% Graph of binning techniques/resolution
-%\begin{figure}[ht]
-%    \centering
-%    \includegraphics[width=\textwidth]{sample.pdf}
-%    \caption[Stuff]
-%    {Stuff}
-%    \label{fig:04-sequence-length-binning}
-%\end{figure}
-
 %Single graph displaying throughput of prefill and decode for specific GPU (Not sure what this is for)
-
-\clearpage
-\section{Inner Solver}
-
-The inner solver brings together the optimum parallelism section from \autoref{chap:prefill-parallelism} and \autoref{chap:decode-parallelism}.
-
-Uses the constraint optimisation problem from \autoref{chap:constraint-optimisation}.
-
-
-% STUFF
-\clearpage
-\section{Island Divider}
-
-Why BO is difficult with high dimensionality, how we can reduce it with simple algorithm.
-
-\clearpage
-\subsection{Procedure}
-The primary goal of the island divider procedure is to programmatically divide a given total number of GPUs of a specific type into a list of smaller, integer‐sized islands.
-Let \(G_{\text{total}}\) denote the total number of GPUs available for that type, and let \(N_{\text{target}}\) represent the desired number of islands to create.
-The actual number of islands may be lower if there are not enough GPUs to satisfy the minimum‐size requirement.
-The parameter \(S_{\text{skew}}\) controls how any leftover GPUs (after each island has been assigned its minimum) are distributed: when \(S_{\text{skew}}\approx0.0\), the extra GPUs are spread as evenly as possible; if \(S_{\text{skew}}>0.0\), islands with higher indices receive proportionally more of the remainder; and if \(S_{\text{skew}}<0.0\), islands with lower indices receive more.
-Finally, \(I_{\text{min}}\) specifies the minimum number of GPUs that any island must contain.
-
-% we repeat this for every GPU type
-
-\subsubsection{Preconditions}
-Initially, we verify that the input parameters meet a series of constraints, if any of these conditions is not met, the procedure raises an error and terminates immediately.
-The requirement \(I_{\text{min}} > 0\) ensures that each island contains at least one GPU, since a non‐positive minimum would be impossible.
-Similarly, \(G_{\text{total}}\) must be nonnegative because a negative total GPU count is invalid, and \(N_{\text{target}}\) must also be nonnegative because a negative number of islands cannot be requested
-
-Next, we perform trivial checks to assess whether it is possible to create at least one island given the input parameters.
-If \(N_{\text{target}} = 0\), then no islands are to be created and the function returns the empty set \(\varnothing\).
-The procedure then addresses cases in which allocation is not possible: if \(G_{\text{total}} = 0\), there are no GPUs to allocate and the function returns \(\varnothing\).
-Similarly, if \(G_{\text{total}} < I_{\text{min}}\), there are insufficient GPUs to form even a single island of size \(I_{\text{min}}\), so the function again returns \(\varnothing\).
-Only when all these preliminary checks have passed does the algorithm proceed to determine the feasible number of islands and distribute the GPUs accordingly.
-
-% Maybe simplify to just say that bad inputs are discounted
-
-\subsubsection{Number of Islands}
-
-To establish how many islands can feasibly be created given the available GPUs and the minimum‐size requirement, we first compute \(N_{\text{max\_possible}} = \lfloor G_{\text{total}} / I_{\text{min}} \rfloor\), which represents the maximum number of islands if each island is allocated exactly \(I_{\text{min}}\) GPUs.
-We then set \(N_{\text{actual}} = \min\bigl(N_{\text{target}},\,N_{\text{max\_possible}}\bigr)\), so that the actual number of islands cannot exceed either the user’s target or the physical limit imposed by the GPU pool.
-If \(N_{\text{actual}} = 0\), this indicates that even a single island of size \(I_{\text{min}}\) cannot be formed (either because \(N_{\text{target}} = 0\) or because \(G_{\text{total}} < I_{\text{min}}\)), and the function returns the empty set \(\varnothing\).
-Otherwise, \(N_{\text{actual}}\) islands will be created, each initially allocated \(I_{\text{min}}\) GPUs before any further distribution of the remaining GPUs occurs.
-
-\subsubsection{Base Allocation}
-
-In the base allocation step, we allocate \(I_{\text{min}}\) GPUs to each of the \(N_{\text{actual}}\) islands, so that the total GPUs used for this initial distribution is \(G_{\text{base\_used}} = N_{\text{actual}} \cdot I_{\text{min}}\).
-The number of GPUs remaining to be distributed is then \(G_{\text{remaining}} = G_{\text{total}} - G_{\text{base\_used}}\).
-At this point, every island has been provisioned with its minimum allocation of \(I_{\text{min}}\) GPUs, and the remaining \(G_{\text{remaining}}\) GPUs will be allocated in subsequent steps.
-
-\subsubsection{Island Distribution}
-
-In the case where \(G_{\text{remaining}} = 0\), all GPUs have already been assigned to the \(N_{\text{actual}}\) islands at their minimum size, so we make no weighted adjustments.
-When \(N_{\text{actual}} = 1\), there is only a single island so we add all \(G_{\text{remaining}}\) GPUs to that island.
-Otherwise we can distribute the remaining GPUs using the \(S_{\text{skew}}\)value.
-
-The distribution begins with the calculation of a weight $w_k$ for each island $k$, where $k$ ranges from $1$ to $N_{\text{actual}}$, computed as $w_k = k^{S_{\text{skew}}}$.
-However, if $S_{\text{skew}}$ is numerically close to zero, each island is given an equal weight of $w_k = 1.0$.
-These weights are then normalised so that we can derive proportions $p_k$, indicating each island's share of the remaining GPUs. The sum of the weights is computed as
-\[
-W_{\text{sum}} = \sum_{j=1}^{N_{\text{actual}}} w_j.
-\]
-%If $W_{\text{sum}} \leq 0$, which may occur due to numerical errors or degenerate inputs, all islands are assigned equal proportions, $p_k = \frac{1}{N_{\text{actual}}}$. Otherwise, 
-Each proportion is determined by dividing the weight of an island by the weight sum:
-\[
-p_k = \frac{w_k}{W_{\text{sum}}}.
-\]
-Using these proportions, we compute the ideal (possibly fractional) allocation $s_k^{\text{ideal}}$ for each island:
-\[
-s_k^{\text{ideal}} = p_k \cdot G_{\text{remaining}}.
-\]
-
-\subsubsection{Integer Adjustment}
-
-Because GPUs can only be allocated in integer units, we use the largest remainder method to convert the fractional allocations into integers.
-First, each island $k$ is provisionally assigned a base number of GPUs:
-\[
-s_k^{\text{base\_int}} = \left\lfloor s_k^{\text{ideal}} \right\rfloor.
-\]
-The current island sizes (initialised to $I_{\text{min}}$) are then increased by these integer allocations.
-
-%\clearpage
-%Next, the discrepancy between the total allocated GPUs and the intended $G_{\text{remaining}}$ is computed. This discrepancy,
-%\[
-%D = \text{round} \left( G_{\text{remaining}} - \sum_{j=1}^{N_{\text{actual}}} s_j^{\text{base\_int}} \right),
-%\]
-%represents the number of GPUs that are still unassigned due to rounding down the fractional values. To distribute the $D$ leftover GPUs, we calculate the fractional part for each island as
-%\[
-%f_k = s_k^{\text{ideal}} - s_k^{\text{base\_int}},
-%\]
-%and identify the $D$ islands with the largest fractional parts. Each of these selected islands receives one additional GPU.
-%
-%At the end of this process, each island has a final size given by
-%\[
-%S_k = I_{\text{min}} + s_k^{\text{base\_int}} + \delta_k,
-%\]
-%where $\delta_k \in \{0, 1\}$ depending on whether the island received an extra GPU during the discrepancy distribution. The total sum of all final island sizes equals $G_{\text{total}}$, satisfying the constraint that all available GPUs are used. The function returns this list of $N_{\text{actual}}$ island sizes as the result of the procedure.
-
-
-
-
 
 % THIS IS USEFUL TEXT - BUT BETTER FOR LATER
 

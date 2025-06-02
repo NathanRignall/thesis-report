@@ -1,0 +1,91 @@
+% STUFF
+\clearpage
+\section{Outer Solver}
+
+Why BO is difficult with high dimensionality, how we can reduce it with simple algorithm.
+
+\subsection{Island Divider}
+The primary goal of the island divider procedure is to programmatically divide a given total number of GPUs of a specific type into a list of smaller, integer‐sized islands.
+Let \(G_{\text{total}}\) denote the total number of GPUs available for that type, and let \(N_{\text{target}}\) represent the desired number of islands to create.
+The actual number of islands may be lower if there are not enough GPUs to satisfy the minimum‐size requirement.
+The parameter \(S_{\text{skew}}\) controls how any leftover GPUs (after each island has been assigned its minimum) are distributed: when \(S_{\text{skew}}\approx0.0\), the extra GPUs are spread as evenly as possible; if \(S_{\text{skew}}>0.0\), islands with higher indices receive proportionally more of the remainder; and if \(S_{\text{skew}}<0.0\), islands with lower indices receive more.
+Finally, \(I_{\text{min}}\) specifies the minimum number of GPUs that any island must contain.
+
+% we repeat this for every GPU type
+
+\subsubsection{Preconditions}
+Initially, we verify that the input parameters meet a series of constraints, if any of these conditions is not met, the procedure raises an error and terminates immediately.
+The requirement \(I_{\text{min}} > 0\) ensures that each island contains at least one GPU, since a non‐positive minimum would be impossible.
+Similarly, \(G_{\text{total}}\) must be nonnegative because a negative total GPU count is invalid, and \(N_{\text{target}}\) must also be nonnegative because a negative number of islands cannot be requested
+
+Next, we perform trivial checks to assess whether it is possible to create at least one island given the input parameters.
+If \(N_{\text{target}} = 0\), then no islands are to be created and the function returns the empty set \(\varnothing\).
+The procedure then addresses cases in which allocation is not possible: if \(G_{\text{total}} = 0\), there are no GPUs to allocate and the function returns \(\varnothing\).
+Similarly, if \(G_{\text{total}} < I_{\text{min}}\), there are insufficient GPUs to form even a single island of size \(I_{\text{min}}\), so the function again returns \(\varnothing\).
+Only when all these preliminary checks have passed does the algorithm proceed to determine the feasible number of islands and distribute the GPUs accordingly.
+
+% Maybe simplify to just say that bad inputs are discounted
+
+\subsubsection{Number of Islands}
+
+To establish how many islands can feasibly be created given the available GPUs and the minimum‐size requirement, we first compute \(N_{\text{max\_possible}} = \lfloor G_{\text{total}} / I_{\text{min}} \rfloor\), which represents the maximum number of islands if each island is allocated exactly \(I_{\text{min}}\) GPUs.
+We then set \(N_{\text{actual}} = \min\bigl(N_{\text{target}},\,N_{\text{max\_possible}}\bigr)\), so that the actual number of islands cannot exceed either the user’s target or the physical limit imposed by the GPU pool.
+If \(N_{\text{actual}} = 0\), this indicates that even a single island of size \(I_{\text{min}}\) cannot be formed (either because \(N_{\text{target}} = 0\) or because \(G_{\text{total}} < I_{\text{min}}\)), and the function returns the empty set \(\varnothing\).
+Otherwise, \(N_{\text{actual}}\) islands will be created, each initially allocated \(I_{\text{min}}\) GPUs before any further distribution of the remaining GPUs occurs.
+
+\subsubsection{Base Allocation}
+
+In the base allocation step, we allocate \(I_{\text{min}}\) GPUs to each of the \(N_{\text{actual}}\) islands, so that the total GPUs used for this initial distribution is \(G_{\text{base\_used}} = N_{\text{actual}} \cdot I_{\text{min}}\).
+The number of GPUs remaining to be distributed is then \(G_{\text{remaining}} = G_{\text{total}} - G_{\text{base\_used}}\).
+At this point, every island has been provisioned with its minimum allocation of \(I_{\text{min}}\) GPUs, and the remaining \(G_{\text{remaining}}\) GPUs will be allocated in subsequent steps.
+
+\subsubsection{Island Distribution}
+
+In the case where \(G_{\text{remaining}} = 0\), all GPUs have already been assigned to the \(N_{\text{actual}}\) islands at their minimum size, so we make no weighted adjustments.
+When \(N_{\text{actual}} = 1\), there is only a single island so we add all \(G_{\text{remaining}}\) GPUs to that island.
+Otherwise we can distribute the remaining GPUs using the \(S_{\text{skew}}\)value.
+
+The distribution begins with the calculation of a weight $w_k$ for each island $k$, where $k$ ranges from $1$ to $N_{\text{actual}}$, computed as $w_k = k^{S_{\text{skew}}}$.
+However, if $S_{\text{skew}}$ is numerically close to zero, each island is given an equal weight of $w_k = 1.0$.
+These weights are then normalised so that we can derive proportions $p_k$, indicating each island's share of the remaining GPUs. The sum of the weights is computed as
+\[
+W_{\text{sum}} = \sum_{j=1}^{N_{\text{actual}}} w_j.
+\]
+%If $W_{\text{sum}} \leq 0$, which may occur due to numerical errors or degenerate inputs, all islands are assigned equal proportions, $p_k = \frac{1}{N_{\text{actual}}}$. Otherwise, 
+Each proportion is determined by dividing the weight of an island by the weight sum:
+\[
+p_k = \frac{w_k}{W_{\text{sum}}}.
+\]
+Using these proportions, we compute the ideal (possibly fractional) allocation $s_k^{\text{ideal}}$ for each island:
+\[
+s_k^{\text{ideal}} = p_k \cdot G_{\text{remaining}}.
+\]
+
+\subsubsection{Integer Adjustment}
+
+Because GPUs can only be allocated in integer units, we use the largest remainder method to convert the fractional allocations into integers.
+First, each island $k$ is provisionally assigned a base number of GPUs:
+\[
+s_k^{\text{base\_int}} = \left\lfloor s_k^{\text{ideal}} \right\rfloor.
+\]
+The current island sizes (initialised to $I_{\text{min}}$) are then increased by these integer allocations.
+
+%\clearpage
+%Next, the discrepancy between the total allocated GPUs and the intended $G_{\text{remaining}}$ is computed. This discrepancy,
+%\[
+%D = \text{round} \left( G_{\text{remaining}} - \sum_{j=1}^{N_{\text{actual}}} s_j^{\text{base\_int}} \right),
+%\]
+%represents the number of GPUs that are still unassigned due to rounding down the fractional values. To distribute the $D$ leftover GPUs, we calculate the fractional part for each island as
+%\[
+%f_k = s_k^{\text{ideal}} - s_k^{\text{base\_int}},
+%\]
+%and identify the $D$ islands with the largest fractional parts. Each of these selected islands receives one additional GPU.
+%
+%At the end of this process, each island has a final size given by
+%\[
+%S_k = I_{\text{min}} + s_k^{\text{base\_int}} + \delta_k,
+%\]
+%where $\delta_k \in \{0, 1\}$ depending on whether the island received an extra GPU during the discrepancy distribution. The total sum of all final island sizes equals $G_{\text{total}}$, satisfying the constraint that all available GPUs are used. The function returns this list of $N_{\text{actual}}$ island sizes as the result of the procedure.
+
+
+

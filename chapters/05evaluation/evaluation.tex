@@ -1,5 +1,89 @@
+\graphicspath{{chapters/04design/graphs}}
+
 \chapter{Evaluation}
 
 %For any practical projects, you should almost certainly have some kind
 %of evaluation, and it's often useful to separate this out into its own
 %chapter.
+
+% Introduce where the traces have come from
+\clearpage
+\subsection{Traces}
+
+% The main set of traces (Azure LLM)
+\subsubsection{Azure LLM}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{traces_azure_context_tokens_distribution.pdf}
+    \caption[Context Tokens]
+    {Context Tokens}
+    \label{fig:05-traces-azure-context-tokens-distribution}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{traces_azure_generated_tokens_distribution.pdf}
+    \caption[Decode Tokens]
+    {Decode Tokens}
+    \label{fig:05-traces-azure-generated-tokens-distribution}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{traces_azure_conv_gen_vs_context.pdf}
+        \caption{Converstation Trace}
+        \label{fig:05-traces-azure-conv-gen-vs-context}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{traces_azure_code_gen_vs_context.pdf}
+        \caption{Code Trace}
+        \label{fig:05-traces-azure-code-gen-vs-context}
+    \end{subfigure}
+    \caption{Comparison of Converstation and Code}
+    \label{fig:05-traces-azure-gen-vs-context}
+\end{figure}
+
+% Another set of traces (BurstGPT)
+\clearpage
+\subsubsection{BurstGPT}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{traces_burst_context_tokens_distribution.pdf}
+    \caption[Context Tokens]
+    {Context Tokens}
+    \label{fig:05-traces-burst-context-tokens-distribution}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{traces_burst_generated_tokens_distribution.pdf}
+    \caption[Decode Tokens]
+    {Decode Tokens}
+    \label{fig:05-traces-burst-generated-tokens-distribution}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{traces_burst_conv_gen_vs_context.pdf}
+        \caption{Converstation Trace}
+        \label{fig:05-traces-burst-conv-gen-vs-context}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{traces_burst_code_gen_vs_context.pdf}
+        \caption{Code Trace}
+        \label{fig:05-traces-burst-code-gen-vs-context}
+    \end{subfigure}
+    \caption{Comparison of Converstation and Code}
+    \label{fig:05-traces-burst-gen-vs-context}
+\end{figure}
+ 

@@ -6,7 +6,7 @@
 %encouraging a cost effective solution
 
 
-\subsection{Throughput}
+\subsection{Throughput Modelling}
 
 Demonstrated in \autoref{chap:simulator-usage}, the Shallowsim simulator has support for estimating the throughput of a single request of a static input sequence and decode length.
 It is highly improbable that an entire workload consists of a single request type, instead we expect a distribution of sequence lengths, as shown in \autoref{chap:workload-modeling}.
@@ -41,13 +41,7 @@ The overall expected throughput is given by:
 
 This value represents the effective throughput achievable by the system under the given workload and output length assumptions.
 
-%Formally, let $s$ denote the sequence length, $S$ the set of all possible sequence lengths, $p(s)$ the probability of observing a request of length $s$, and $R_{\text{prefill}}(s)$ the measured prefill throughput at that length (in requests per second).
-%The expected prefill throughput, denoted by $\mathbb{E}[R_{\text{prefill}}]$, is then given by the following expression:
-%\[
-%\mathbb{E}[R_{\text{prefill}}] = \sum_{s \in S} R_{\text{prefill}}(s) \cdot p(s)
-%\]
-
-\subsection{Percent Allocation}
+\subsection{Throughput Allocation}
 
 Previous calculations assumed that a singular GPU island is contributing to the overall throughput of the system.
 In reality, we would like to be able to construct several GPU islands and assign each island to a request type it is best suited for.
@@ -71,8 +65,5 @@ while the expected decode throughput for average decode length \(d\) is
 =\sum_{i\in I_{\mathrm{decode}}}\sum_{s\in S}
 x_i(s)\,R_{\mathrm{decode}}^{(i)}(s,d)\,p(s\mid w).
 \]
-Since end‐to‐end request processing cannot exceed its slowest stage, the overall expected throughput is simply the bottleneck of these two values:
-\[
-\mathbb{E}[R_{\mathrm{overall}}\mid w,d]
-=\min\bigl(\mathbb{E}[R_{\mathrm{prefill}}\mid w],\;\mathbb{E}[R_{\mathrm{decode}}\mid w,d]\bigr).
-\]
+
+% Some graphs showing the throughput calculation + Some graphs showing throughput allocation outcomes

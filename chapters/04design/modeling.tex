@@ -2,43 +2,32 @@
 \section{Workload Modeling}
 \label{chap:workload-modeling}
 
-Statistical distributions (available from sources)
+We expect LLM inference services to encounter several different classes of workloads, depending on the user's use-case.
+These workloads have different characteristics of input sequence length (request message plus any system prompts), and also different decode lengths (numbers of characteristics generated).
+For example, one would expect code prompts and responses to have different input sequence and decode lengths than to that of conversation prompts.
+Hence, we must design a scheduler that is able to optimise over a specific workload class.
 
 \subsection{Input Sequence Length}
-To achieve more fine-grained control of request scheduling, dependant on input sequence, we model the input request length as a probability distribution.
+To achieve fine-grained control of request scheduling, dependant on input sequence, we model the input request length as a probability distribution.
 Hence, for a chosen workload type, there is a specific probability of request arriving with given sequence length.
 
 Let $w \in W$ denote a workload type from the set of all workload types $W$.
 For each workload type $w$, we define a probability mass function $p(s \mid w)$, which represents the probability of a request having sequence length $s \in S$ under workload $w$.
-This distribution satisfies:
+This distribution satisfies: $\sum_{s \in S} p(s \mid w) = 1 \quad \text{for all } w \in W$.
 
-\[
-\sum_{s \in S} p(s \mid w) = 1 \quad \text{for all } w \in W
-\]
-
-% Equation of PDF
-
-% Graph of PDF
-%\begin{figure}[ht]
-%    \centering
-%    \includegraphics[width=\textwidth]{sample.pdf}
-%    \caption[Sample probability distribution for input sequence lengtht]
-%    {Sample probability distribution for input sequence length}
-%    \label{fig:04-sample-pdf}
-%\end{figure}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{traces_prefill_sample.pdf}
+    \caption[Sample probability distribution of input sequence lengths]
+    {Sample probability distribution of input sequence length. Modelled using a pdf where $mu=500$, $sigma=2000$ and truncated/normalised to the range \(0 \leq s \leq 8000\).}
+    \label{fig:04-sample-pdf}
+\end{figure}
 
 Instead of only considering the distribution of sequence lengths during assignment, to model system throughput, we use them to find the most optimal pairing of sequence length to GPU island.
 Therefore, specific GPU islands can be configured to most optimally perform prefill operations for a specific sequence length.
 When a request arrives, we can direct it to the GPU islands targeted to serve that request length, defined in the schedule.
 
 % Graph of sequence length vs GPU
-%\begin{figure}[ht]
-%    \centering
-%    \includegraphics[width=\textwidth]{sample.pdf}
-%    \caption[Stuff]
-%    {Stuff}
-%    \label{fig:04-sequence-length-gpu}
-%\end{figure}
 
 \subsection{Decode Length}
 While decode length can also be modelled using a probability density function, this information (specific distribution) is less useful from a scheduling perspective.
@@ -49,14 +38,20 @@ We can assume that a decode request must complete on the GPU island it started p
 
 For some workloads there is a small correlation between input sequence length and decode length, but this relationship is often not significant. %Example?
 Therefore, at the point of request arrival we do not have enough information about the decode length to make informed per-decode length scheduling decisions.
-
 Hence, creating specific GPU configurations for short, medium, long, etc. decode lengths would likely be inefficient. 
 As we cannot accurately predict decode length, there is a high probability that a decode request would have to move island.
 
-Prior work has demonstrated that it can be possible to predict decode length using the input text contents. %Reference?
+%Prior work has demonstrated that it can be possible to predict decode length using the input text contents. %Reference?
 
 Instead, we model our scheduler using an average decode length for a given workload type and design every GPU decode island to support the maximum decode length expected. 
 Unlike the sequence length, the decode length is simply being used for system modelling activities to characterise performance, not direct traffic.
-
 However, we can still make scheduling decisions for the decode phase using the sequence length as a feature, given the maximum decode length affected by the input length.
 This is due to all the input and decode tokens KV values being stored in GPU memory.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\textwidth]{traces_decode_sample.pdf}
+    \caption[Sample probability distribution of decode lengths]
+    {Sample probability distribution of decode length. Modelled using a pdf where $mu=100$, $sigma=200$ and truncated/normalised to the range \(0 \leq s \leq 500\). Average decode length (100) and max decode length (500) are extracted for use in the scheduler.}
+    \label{fig:04-sample-pdf}
+\end{figure}

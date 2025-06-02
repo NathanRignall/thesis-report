@@ -24,23 +24,23 @@ Such attention is calculated by adding positional encodings to input embeddings 
 Some model architectures also use multi-head attention, where multiple query, key and value vectors are calculated.
 
 The first Transformer models were originally designed for encoder-decoder tasks such as translation, where an input sequence is encoded and decoded to an output sequence. 
-
+%
 An encoder 
 Processes input sequence
 Contextualized hidden representation
 No access to future tokens
-
+%
 Decoder
 Generates output tokens one-by-one
 Masked self-attation to prevent seeing future tokens
-
+%
 Encoder-only models are typically used for classification and sentence embeddings.  
-
+%
 Decoder-only 
 Used for autoregressive generation (language modelling, chatbots, coding assistants
-
+%
 Transformers form the basis of modern natural language processing due to their scalability, parallelisation benefits, and excellent performance on long-range dependencies.
-
+%
 What is an LLM?
 
 \subsection{Computation Steps}
@@ -49,16 +49,16 @@ The process begins with Input Embedding and Positional Encoding where each token
 Next, the model computes the Query (Q), Key (K) and Value (V) vectors for each token, this is calculated by projecting the input embeddings through learned linear transformations.
 Using the Q, K, and V values the model performs Scaled Dot-Product Attention 
 Models can also use Multi-Head Attention
-
+%
 Instead of computing a single attention operation, the model splits the Q, K, and V matrices into multiple “heads”, concatenates the outputs 
-
+%
 The Add and Normalisation steps follow attention
 -	The original input is added to the output and normalised
-
+%
 Feed-Forward Network
-
+%
 Stacked Layers
-
+%
 Output
 
 %Diagram of Transformer architecture
@@ -90,21 +90,21 @@ Key value caching is an optimisation used during inference steps for transformer
 
 \subsection{Mixture of Experts}
 A neural network architecture specifically design to scale up models
-
+%
 Instead of one big model
 Pool of expert networks
 For each input token, usually only a subset of these experts are activated
 Router chooses which experts to use based on the input
-
+%
 Designed to be compute efficient
 Only the activate experts consume compute
 Allows for scaling up a model’s capacity (without linear increase in inference cost)
-
+%
 Good
 Big model cpacpaity
 Better scling lwas
 Felxiblke
-
+%
 Bad
 Routing instability
 Load balancing
@@ -114,35 +114,35 @@ Complexity
 \subsection{DeepSeek Architecture}
 
 Some information about the DeepSeek architecture.
-
+%
 Focus on MoE, A2A etc.
 
 % What different parallelism techniques are available
 \section{Parallelism}
 
-\textbf{Data parallelism} refers to replicating a model across multiple processing units (GPUs/CPUs/TPUs), with each replica receiving a different slice of the input data.
+\textbf{Data parallelism} refers to replicating a model across multiple processing units (GPUs / CPUs / TPUs), with each replica receiving a different slice of the input data.
 Hence, this technique is generally used to increase throughput of an overall system, especially in batched inference scenarios
 
-Example - batch of requests is split between 100 / 4 =25
+%Example - batch of requests is split between 100 / 4 =25
 
 \textbf{Model parallelism} involves partitioning the model itself across several processing units, where each device is responsible for a portion of the model’s layers or operations. This is most helpful when a model cannot fit on a single device, due to memory demand greater than what is 
 
 Enables inference on devices that individually do not support
-
+%
 Every forward pass requires synchronisation, introducing a communication overhead that may negatively impact latency
-
+%
 Example
 
 \textbf{Tensor parallelism} is a specialised form of model parallelism, generally used with large deep learning models.
-
+%
 Individual tensors are split across multiple devices (rather than whole layers
-
+%
 Operator-Level parallelism
 Stuff
 
 \textbf{Expert Parallelism}
 Mixture of experts 
-
+%
 Expert parallelism occurs when different experts are placed on different devices and are activated in parallel for 
 
 \textbf{Batching}
@@ -153,7 +153,7 @@ Focus on latency, 99th percentile
 % Different technologies to build a scheduler 
 \section{Scheduler}
 
-(maybe need context on why talking about schedulers)
+Context on why talking about schedulers...
 
 Optimisation techniques…
 

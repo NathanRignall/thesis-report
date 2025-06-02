@@ -61,7 +61,6 @@ x_i(s)\;\ge\;0
   \]
 \end{enumerate}
 
-
 \subsubsection*{Objective}
 Maximise
 \[
@@ -78,4 +77,12 @@ R = \sum_{i\in I}\sum_{s\in S}b_i(s)\,x_i(s),
 
 \subsection{Applicable Solvers}
 
-Non-linear.
+Non-linear (due to multiplication and division).
+
+Can be solved using Python but is slow. 
+
+\subsection{Problem Usage}
+
+Cannot be used in isolation, we need an architecture that is able to formulate islands.
+
+Turn unbounded bin packing to bounded bin packing.
