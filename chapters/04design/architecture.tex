@@ -1,6 +1,17 @@
 % Architecture
 \section{Architecture}
 
+%Furthermore, we statically define I to a set of curated islands, and the optimiser simply fits the workload to these islands.
+%In order to generate the most optimal solution, we need to choose the best set of island sizes for each GPU type.
+%However, adding this decision process to the constraint optimisation problem increases its complexity, as it effectively turns a bounded bin packing problem into an unbounded one.
+%The optimiser must now determine not only the workload allocation but also the optimal sizes and number of islands.
+%Hence, we need to formulate an architectural approach that incorporates this logic, which we detail in \autoref{chap:architecture}.
+
+During \autoref{chap:constraint-optimisation} we formulated a bounded bin‐packing problem, by constraining the islands to a pre‐defined type and size.
+In a true scheduling problem we expect to be allocated an inventory of different GPU types, let \(T\) be the set of GPU types.
+For each \(t\in T\), let \(n_t\) be the number of GPUs of type \(t\) allocated in the inventory.
+The full GPU inventory is then the vector \(\bigl(n_t\bigr)_{t\in T}\), with total number of GPUs \(N = \sum_{t\in T} n_t.\).
+
 \todo{
 
 How the system will be constructed, how it is similar to existing work.
@@ -15,8 +26,35 @@ Effectively an inner finite bin packing problem (statistical best solution)
 
 }
 
-We can call the bounded bin packing problem the \textit{inner loop}
+We can call the bounded bin packing problem the \textit{inner loop}.
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.8cm and 2.5cm,
+  every node/.style={draw, align=center, minimum height=1.2cm, minimum width=3cm},
+  arrow/.style={->, thick}
+]
+
+% Nodes
+\node (outer) {Outer Optimiser};
+\node (inner) [right=of outer] {Inner min-cost\\ flow};
+\node (model) [below=of inner, yshift=-1cm] {Model};
+
+% Arrows
+\draw[arrow] (outer) -- node[above] {Propose ``layout''} (inner);
+\draw[arrow] (inner) -- node[right] {\(p_{\text{max}}\)} (model);
+\draw[arrow] (model) -- ++(-4,0) -- node[below, pos=0.6] {Tell(\(p_{\text{max}}\))} (outer.south);
+
+\end{tikzpicture}
+\end{center}
 
 
-Describe the outer optimiser function as the \textit{outer loop}
+We can therefore describe the outer optimiser function as the \textit{outer loop}
 
+
+% THIS IS USEFUL TEXT - BUT BETTER FOR LATER
+
+%When profiling a specific GPU island for a given sequence length (for scheduling), the exact parallelism configuration of the GPUs must be known.
+%Hence, we must first benchmark the GPU island across a range of sequence lengths that we expect to receive in our workload and determine the optimal parallelism configuration.
+%While it is possible that the optimal parallelism configuration for a set of GPUs is different across a range of sequence lengths, we can assume that the best configurations are within a few percent of each other.
+%We can integrate this benchmark parallelism selection step with the profiling step for the constraint solver to save computation requests

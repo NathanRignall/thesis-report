@@ -84,7 +84,7 @@ While the problem can be solved using such solvers, the process tends to be comp
 This is primarily due to the non-convex and non-linear nature of the formulation, which makes it difficult to guarantee convergence to the global optimum.
 Ideally, we would like to linearise this problem to improve computational efficiency and enhance the reliability of finding the best possible solution.
 
-Furthermore, we statically define I to a set of curated islands, and the optimiser simply fits the workload to these islands.
+Furthermore, we statically define $I$ to a set of curated islands, and the optimiser simply fits the workload to these islands.
 In order to generate the most optimal solution, we need to choose the best set of island sizes for each GPU type.
 However, adding this decision process to the constraint optimisation problem increases its complexity, as it effectively turns a bounded bin packing problem into an unbounded one.
 The optimiser must now determine not only the workload allocation but also the optimal sizes and number of islands.

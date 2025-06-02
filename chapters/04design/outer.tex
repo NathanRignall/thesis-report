@@ -8,10 +8,19 @@ Why BO is difficult with high dimensionality, how we can reduce it with simple a
 
 }
 
+\subsection{Direct Island Generation}
+
+\todo{
+
+	How the first version of this worked
+
+}
+
 \subsection{Island Divider}
 The primary goal of the island divider procedure is to programmatically divide a given total number of GPUs of a specific type into a list of smaller, integer‐sized islands.
+
 Let \(G_{\text{total}}\) denote the total number of GPUs available for that type, and let \(N_{\text{target}}\) represent the desired number of islands to create.
-The actual number of islands may be lower if there are not enough GPUs to satisfy the minimum‐size requirement.
+We can allow the actual number of islands may be lower if there are not enough GPUs to satisfy the minimum‐size requirement.
 The parameter \(S_{\text{skew}}\) controls how any leftover GPUs (after each island has been assigned its minimum) are distributed: when \(S_{\text{skew}}\approx0.0\), the extra GPUs are spread as evenly as possible; if \(S_{\text{skew}}>0.0\), islands with higher indices receive proportionally more of the remainder; and if \(S_{\text{skew}}<0.0\), islands with lower indices receive more.
 Finally, \(I_{\text{min}}\) specifies the minimum number of GPUs that any island must contain.
 
