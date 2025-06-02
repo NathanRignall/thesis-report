@@ -2,7 +2,11 @@
 \clearpage
 \section{Outer Solver}
 
+\todo{
+
 Why BO is difficult with high dimensionality, how we can reduce it with simple algorithm.
+
+}
 
 \subsection{Island Divider}
 The primary goal of the island divider procedure is to programmatically divide a given total number of GPUs of a specific type into a list of smaller, integer‐sized islands.
@@ -70,22 +74,22 @@ s_k^{\text{base\_int}} = \left\lfloor s_k^{\text{ideal}} \right\rfloor.
 \]
 The current island sizes (initialised to $I_{\text{min}}$) are then increased by these integer allocations.
 
-%\clearpage
-%Next, the discrepancy between the total allocated GPUs and the intended $G_{\text{remaining}}$ is computed. This discrepancy,
-%\[
-%D = \text{round} \left( G_{\text{remaining}} - \sum_{j=1}^{N_{\text{actual}}} s_j^{\text{base\_int}} \right),
-%\]
-%represents the number of GPUs that are still unassigned due to rounding down the fractional values. To distribute the $D$ leftover GPUs, we calculate the fractional part for each island as
-%\[
-%f_k = s_k^{\text{ideal}} - s_k^{\text{base\_int}},
-%\]
-%and identify the $D$ islands with the largest fractional parts. Each of these selected islands receives one additional GPU.
-%
-%At the end of this process, each island has a final size given by
-%\[
-%S_k = I_{\text{min}} + s_k^{\text{base\_int}} + \delta_k,
-%\]
-%where $\delta_k \in \{0, 1\}$ depending on whether the island received an extra GPU during the discrepancy distribution. The total sum of all final island sizes equals $G_{\text{total}}$, satisfying the constraint that all available GPUs are used. The function returns this list of $N_{\text{actual}}$ island sizes as the result of the procedure.
+\todo{
 
+Next, the discrepancy between the total allocated GPUs and the intended $G_{\text{remaining}}$ is computed. This discrepancy,
+\[
+D = \text{round} \left( G_{\text{remaining}} - \sum_{j=1}^{N_{\text{actual}}} s_j^{\text{base\_int}} \right),
+\]
+represents the number of GPUs that are still unassigned due to rounding down the fractional values. To distribute the $D$ leftover GPUs, we calculate the fractional part for each island as
+\[
+f_k = s_k^{\text{ideal}} - s_k^{\text{base\_int}},
+\]
+and identify the $D$ islands with the largest fractional parts. Each of these selected islands receives one additional GPU.
 
+At the end of this process, each island has a final size given by
+\[
+S_k = I_{\text{min}} + s_k^{\text{base\_int}} + \delta_k,
+\]
+where $\delta_k \in \{0, 1\}$ depending on whether the island received an extra GPU during the discrepancy distribution. The total sum of all final island sizes equals $G_{\text{total}}$, satisfying the constraint that all available GPUs are used. The function returns this list of $N_{\text{actual}}$ island sizes as the result of the procedure.
 
+}

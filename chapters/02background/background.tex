@@ -47,7 +47,7 @@ What is an LLM?
 There are several compute steps involved in a Transformer model’s forward pass, during inference tasks.
 The process begins with Input Embedding and Positional Encoding where each token in the input sequence is converted into a vector, using a learned embedding matrix.
 Next, the model computes the Query (Q), Key (K) and Value (V) vectors for each token, this is calculated by projecting the input embeddings through learned linear transformations.
-Using the Q, K, and V values the model performs Scaled Dot-Product Attention 
+%Using the Q, K, and V values the model performs Scaled Dot-Product Attention 
 Models can also use Multi-Head Attention
 %
 Instead of computing a single attention operation, the model splits the Q, K, and V matrices into multiple “heads”, concatenates the outputs 
@@ -88,8 +88,9 @@ Key value caching is an optimisation used during inference steps for transformer
 
 %Diagram of Key Value cache
 
-\subsection{Mixture of Experts}
-A neural network architecture specifically design to scale up models
+\subsection{Mixture of Experts} 
+
+\todo{A neural network architecture specifically design to scale up models
 %
 Instead of one big model
 Pool of expert networks
@@ -108,14 +109,14 @@ Felxiblke
 Bad
 Routing instability
 Load balancing
-Complexity
+Complexity}
 
 % How this problem is different for MoE
 \subsection{DeepSeek Architecture}
 
-Some information about the DeepSeek architecture.
+\todo{Some information about the DeepSeek architecture.
 %
-Focus on MoE, A2A etc.
+Focus on MoE, A2A etc.}
 
 % What different parallelism techniques are available
 \section{Parallelism}
@@ -125,42 +126,43 @@ Hence, this technique is generally used to increase throughput of an overall sys
 
 %Example - batch of requests is split between 100 / 4 =25
 
-\textbf{Model parallelism} involves partitioning the model itself across several processing units, where each device is responsible for a portion of the model’s layers or operations. This is most helpful when a model cannot fit on a single device, due to memory demand greater than what is 
+\textbf{Model parallelism} involves partitioning the model itself across several processing units, where each device is responsible for a portion of the model’s layers or operations. This is most helpful when a model cannot fit on a single device, due to memory demand greater than what is available.
 
-Enables inference on devices that individually do not support
+\todo{Enables inference on devices that individually do not support
 %
 Every forward pass requires synchronisation, introducing a communication overhead that may negatively impact latency
 %
-Example
+Example}
 
 \textbf{Tensor parallelism} is a specialised form of model parallelism, generally used with large deep learning models.
 %
-Individual tensors are split across multiple devices (rather than whole layers
+\todo{Individual tensors are split across multiple devices (rather than whole layers
 %
 Operator-Level parallelism
-Stuff
+Stuff}
 
 \textbf{Expert Parallelism}
-Mixture of experts 
+
+\todo{Mixture of experts 
 %
-Expert parallelism occurs when different experts are placed on different devices and are activated in parallel for 
+Expert parallelism occurs when different experts are placed on different devices and are activated in parallel for}
 
 \textbf{Batching}
 
-What are the different types of batching, how does this affect the overall performance on the system?
-Focus on latency, 99th percentile 
+\todo{What are the different types of batching, how does this affect the overall performance on the system?
+Focus on latency, 99th percentile}
 
 % Different technologies to build a scheduler 
 \section{Scheduler}
 
-Context on why talking about schedulers...
+\todo{Context on why talking about schedulers...
 
-Optimisation techniques…
+Optimisation techniques…}
 
 % Heuristic
 \subsection{Heuristic-Based Methods}
 
-What is this kind of technique?
+\todo{What is this kind of technique?
 
 \textbf{First-Come, First-Served (FCFS)} is...
 
@@ -170,12 +172,12 @@ What is this kind of technique?
 
 \textbf{Priority-Based} is...
 
-\textbf{Load Balancing (Best Fit, Worst Fit)} is...
+\textbf{Load Balancing (Best Fit, Worst Fit)} is...}
 
 % Metaheuristic
 \subsection{Metaheuristic Algorithms}
 
-An intro...
+\todo{An intro...
 
 \textbf{Genetic Algorithms (GA)} is...
 
@@ -183,11 +185,13 @@ An intro...
 
 \textbf{Ant Colony Optimisation (ACO)} is...
 
-\textbf{Simulated Annealing (SA)} is...
+\textbf{Simulated Annealing (SA)} is...}
 
 % Search
 \subsection{Search-Based}
 Search-based Optimisation refers to methods that systematically or semi-randomly explore a given search space to find an optimal solution. Such techniques are often used to tune a scheduler’s parameters, but can also 
+
+\todo{
 
 \textbf{Bayesian Optimisation (BO)}
 Aquastition function
@@ -201,7 +205,7 @@ Search space is significant
 \textbf{Grid Search}
 Brute force
 Discrete set of possible values for each parameter, then evaluates every combination
-Suffers from curse of dimensionality
+Suffers from curse of dimensionality}
 
 % Constraint
 \subsection{Constraint Programming}
@@ -216,4 +220,8 @@ In the context of scheduling, this enables decisions to be modelled using yes/no
 In the case where constraints cannot be as linear, \textbf{Non-Linear Programming (NLP)} can model problems where either the objective and/or constraints are non-linear functions.
 Given problems are non-linear, it is harder to guarantee a globally optimal solution is generated.
 
+\todo{
+
 \textbf{Mixed Integer Programming (MIP)} is...
+
+}

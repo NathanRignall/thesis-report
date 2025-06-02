@@ -5,6 +5,8 @@ Unfortunately, GPU-hours are prohibitively expensive and using such hours for â€
 Instead, we utilise the latest simulator technology to estimate the performance of LLM inference given a set of input parameters.
 Several simulators exist that attempt to model the performance of an LLM request by using estimation techniques.
 
+\todo{
+
 \textbf{Vidur} (essentially uses linear regression)
 
 \textbf{Shallowsim} is a specialist simulator designed to estimate the compute times for different LLM request types.
@@ -14,7 +16,11 @@ Several simulators exist that attempt to model the performance of an LLM request
 We Select Shallowsim for its transparency for calculations (simplicity).
 And support for Mixture of Expert models
 
-\subsection{Implementation}
+}
+
+\subsection{Shallowsim Implementation}
+
+\todo{
 
 \textbf{Prefill}
 
@@ -73,6 +79,8 @@ What we have done to modify the shallowsim simulator.
 As designed, shallowsim is build for profiling several different GPU configurations at once.
 
 For our system, we are particularly interested in per-configuration results
+
+}
 
 \subsection{Usage}
 \label{chap:simulator-usage}

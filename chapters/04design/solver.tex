@@ -75,14 +75,19 @@ R = \sum_{i\in I}\sum_{s\in S}b_i(s)\,x_i(s),
 \sigma_s = \frac{\sum_{i\in I}b_i(s)\,x_i(s)}{R}.
 \]
 
-\subsection{Applicable Solvers}
+\subsection{Problem Analysis}
 
-Non-linear (due to multiplication and division).
+The constraint optimisation problem described is non-linear, this is due to the chained multiplications and divisions for the \textit{performance per cell} and \textit{achieved share} calculations.
+ As a result, we require a non-linear programming (NLP) solver to obtain a solution for the proposed problem.
 
-Can be solved using Python but is slow. 
+While the problem can be solved using such solvers, the process tends to be computationally intensive and slow.
+This is primarily due to the non-convex and non-linear nature of the formulation, which makes it difficult to guarantee convergence to the global optimum.
+Ideally, we would like to linearise this problem to improve computational efficiency and enhance the reliability of finding the best possible solution.
 
-\subsection{Problem Usage}
+Furthermore, we statically define I to a set of curated islands, and the optimiser simply fits the workload to these islands.
+In order to generate the most optimal solution, we need to choose the best set of island sizes for each GPU type.
+However, adding this decision process to the constraint optimisation problem increases its complexity, as it effectively turns a bounded bin packing problem into an unbounded one.
+The optimiser must now determine not only the workload allocation but also the optimal sizes and number of islands.
+Hence, we need to formulate an architectural approach that incorporates this logic, which we detail in \autoref{chap:architecture}.
 
-Cannot be used in isolation, we need an architecture that is able to formulate islands.
-
-Turn unbounded bin packing to bounded bin packing.
+% include a digram demonstrating a bounded vs unbounded.
