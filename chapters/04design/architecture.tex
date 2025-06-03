@@ -1,5 +1,6 @@
 % Architecture
-\section{Architecture}
+\section{System Architecture}
+\label{chap:system-architecture}
 
 %Furthermore, we statically define I to a set of curated islands, and the optimiser simply fits the workload to these islands.
 %In order to generate the most optimal solution, we need to choose the best set of island sizes for each GPU type.
@@ -7,54 +8,35 @@
 %The optimiser must now determine not only the workload allocation but also the optimal sizes and number of islands.
 %Hence, we need to formulate an architectural approach that incorporates this logic, which we detail in \autoref{chap:architecture}.
 
-During \autoref{chap:constraint-optimisation} we formulated a bounded bin‐packing problem, by constraining the islands to a pre‐defined type and size.
+During \autoref{chap:constraint-optimisation} we formulated a non-linear bounded bin‐packing problem, by constraining the islands to a pre‐defined type and size.
 In a true scheduling problem we expect to be allocated an inventory of different GPU types, let \(T\) be the set of GPU types.
 For each \(t\in T\), let \(n_t\) be the number of GPUs of type \(t\) allocated in the inventory.
-The full GPU inventory is then the vector \(\bigl(n_t\bigr)_{t\in T}\), with total number of GPUs \(N = \sum_{t\in T} n_t.\).
+The full GPU inventory is then the vector \(\bigl(n_t\bigr)_{t\in T}\), with total number of GPUs in the system modelled as \(N = \sum_{t\in T} n_t\).
 
-\todo{
+Similar to ThunderServe \autocite{jiangThunderServeHighperformanceCostefficient2025}, we can separate this scheduling problem as two separate, distinct stages.
+The first stage is the island layout generation, which we can treat as a search‐like optimisation problem in which we explore combinations of GPU island sizes and types.
+The second stage is the bounded bin‐packing step, a deterministic problem that assigns workload ranges to the pre‐computed islands to maximise throughput for a given workload.
+By decoupling layout design from the packing phase, we can leverage specialised solvers for each subproblem and significantly reduce overall computational complexity. 
 
-How the system will be constructed, how it is similar to existing work.
-
-Like thunderserve
-
-Separate into two distinct problems
-
-Outer optimisation
-
-Effectively an inner finite bin packing problem (statistical best solution)
-
-}
-
-We can call the bounded bin packing problem the \textit{inner loop}.
-
-\begin{center}
-\begin{tikzpicture}[
-  node distance=1.8cm and 2.5cm,
-  every node/.style={draw, align=center, minimum height=1.2cm, minimum width=3cm},
-  arrow/.style={->, thick}
-]
-
-% Nodes
-\node (outer) {Outer Optimiser};
-\node (inner) [right=of outer] {Inner min-cost\\ flow};
-\node (model) [below=of inner, yshift=-1cm] {Model};
-
-% Arrows
-\draw[arrow] (outer) -- node[above] {Propose ``layout''} (inner);
-\draw[arrow] (inner) -- node[right] {\(p_{\text{max}}\)} (model);
-\draw[arrow] (model) -- ++(-4,0) -- node[below, pos=0.6] {Tell(\(p_{\text{max}}\))} (outer.south);
-
-\end{tikzpicture}
-\end{center}
-
-
-We can therefore describe the outer optimiser function as the \textit{outer loop}
-
-
-% THIS IS USEFUL TEXT - BUT BETTER FOR LATER
-
-%When profiling a specific GPU island for a given sequence length (for scheduling), the exact parallelism configuration of the GPUs must be known.
-%Hence, we must first benchmark the GPU island across a range of sequence lengths that we expect to receive in our workload and determine the optimal parallelism configuration.
-%While it is possible that the optimal parallelism configuration for a set of GPUs is different across a range of sequence lengths, we can assume that the best configurations are within a few percent of each other.
-%We can integrate this benchmark parallelism selection step with the profiling step for the constraint solver to save computation requests
+We refer to the bounded bin packing problem as the \textit{inner loop}, and the outer optimization process as the \textit{outer loop}, as illustrated in \autoref{fig:04-system-architecture}.
+The \textit{outer loop} is responsible for generating promising island layouts, which are then passed to the \textit{inner loop} for resource packing.
+The resulting throughput is returned to the \textit{outer loop}, allowing the optimisation process to evaluate and refine its search for effective configurations.
+ This iterative cycle can be repeated multiple times to generate an optimal solution.
+ 
+\begin{figure}[ht]
+    \centering
+   \begin{tikzpicture}[
+			node distance=1.8cm and 2.5cm,
+			every node/.style={draw, align=center, minimum height=1.2cm, minimum width=3cm},
+			arrow/.style={->, thick}
+		]
+		
+		% Nodes
+		\node (outer) {Outer Optimiser};
+		\node (inner) [right=of outer] {Inner min-cost\\ flow};
+		\node (model) [below=of inner, yshift=-0.5cm] {Model};
+	\end{tikzpicture}
+    \caption[System Archiecture]
+    {System Archiecture}
+    \label{fig:04-system-architecture}
+\end{figure}

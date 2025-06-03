@@ -1,10 +1,46 @@
 \clearpage
-\section{Inner Solver}
+\section{Inner Loop}
 
-\todo{
+The \textit{inner loop} receives an island layout proposal from the \textit{outer loop}, this layout is specified as a finite index set \(\mathcal{I} \;=\; \{\,i = 1,\dots,|\mathcal{I}|\}\), where each island \(i\) is represented by a pair \(\bigl(t_{i},s_{i}\bigr)\).  
+Here, \(t_{i}\in T\) denotes the GPU type assigned to island \(i\), and \(s_{i}\in \mathbb{Z}_{\ge 0}\) indicates the number of GPUs of type \(t_{i}\) allocated to that island.
+The outer loop guarantees that these allocations respect the total‐inventory constraints.
 
-The inner solver brings together the optimum parallelism section from \autoref{chap:prefill-parallelism} and \autoref{chap:decode-parallelism}.
+Given the predefined island layout \(\bigl\{(t_{j},s_{j})\bigr\}_{j=1}^{|\mathcal{I}|}\), the inner loop’s only task is to assign workloads of different prefill and decode lengths.
+No further modification of \(t_{i}\) or \(s_{i}\) takes place at this stage, as the inner loop focuses entirely on determining the optimal bin-packing configuration.
 
-Use the constraint optimisation problem from \autoref{chap:constraint-optimisation}.
+We can outline the steps of the \textit{inner loop} as follow: 
 
-}
+\begin{enumerate}
+    \item \textbf{Form Ranges}  
+    Take the specific workload distribution $w$, and separate into a series of ranges $\mathcal{R}$ using a specified resolution (\autoref{chap:resolution})
+    
+    \item \textbf{Prefill Configuration Generation \& Benchmark}  
+    Identify the best prefill configuration ($c_{\mathrm{prefill}}$) for each island \(i\), and return the benchmark results describing the throughput for each range (\autoref{chap:prefill-parallelism}).
+    
+    \item \textbf{Decode Config Generation \& Benchmark}  
+    Identify the best decode configuration ($c_{\mathrm{decode}}$) for each island \(i\), and return the benchmark results describing the throughput for each range (\autoref{chap:decode-parallelism}).
+    
+    \item \textbf{Problem Specification}  
+    Formulate the exact optimisation problem based on the provided prefill and decode benchmarks (\autoref{chap:linear-problem}).
+    
+    \item \textbf{Solve}  
+    Invoke the optimiser on the specified problem, to generate the best solution given the input parameters.
+    
+    \item \textbf{Results}  
+    Extract the final workload‐assignment solution from the solver’s output, including any intermediary variables for debugging.
+    
+\end{enumerate}
+
+% Many linear solution
+\subsection{Linear Representation}
+
+We can take the learning from the previous optimisation problem (\autoref{chap:constraint-optimisation}) to linearise our problem and combine prefill with the decode phases.
+We can also take the learning from the solution resolution (\autoref{chap:resolution}), to reduce the number of variables and the problem complexity.
+
+
+% THIS IS USEFUL TEXT - BUT BETTER FOR LATER - NOT SURE IF EVEN NEEDED
+
+%When profiling a specific GPU island for a given sequence length (for scheduling), the exact parallelism configuration of the GPUs must be known.
+%Hence, we must first benchmark the GPU island across a range of sequence lengths that we expect to receive in our workload and determine the optimal parallelism configuration.
+%While it is possible that the optimal parallelism configuration for a set of GPUs is different across a range of sequence lengths, we can assume that the best configurations are within a few percent of each other.
+%We can integrate this benchmark parallelism selection step with the profiling step for the constraint solver to save computation requests

@@ -8,11 +8,55 @@
 
 \todo{
 
-To do all
+	To do...
 
-Repeat every benchmark 10 times as they are non-deterministic
+	Repeat every benchmark 10 times as they are non-deterministic
+	
+	Compare heterogenous vs homogenous cases (show why heterogeneous is better)
+	
+	Display any benchmarks specific to MoE
 
 }
+
+% inner loop by itself
+\clearpage
+\section{Inner Loop}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{assignment_sample_benchmark.pdf}
+    \caption[Sample Benchmark]
+    {Sample Benchmark}
+    \label{fig:05-assignment-sample-benchmark}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{assignment_sample_assignment}
+    \caption[Sample Assignment]
+    {Sample Assignment}
+    \label{fig:05-assignment-sample-assignment}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{assignment_sample_assignment_benchmark}
+    \caption[Sample Throughput]
+    {Sample Throughput}
+    \label{fig:05-assignment-sample-assignment-benchmark}
+\end{figure}
+
+% outer loop + inner loop
+\clearpage
+\section{Outer Loop}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{bo_demo.pdf}
+    \caption[Comparison of BO methods]
+    {Comparison of BO methods}
+    \label{fig:05-demo}
+\end{figure}
 
 % Introduce where the traces have come from
 \clearpage
@@ -20,6 +64,8 @@ Repeat every benchmark 10 times as they are non-deterministic
 
 % The main set of traces (Azure LLM)
 \subsubsection{Azure LLM}
+
+Source \autocite{stojkovicDynamoLLMDesigningLLM2024}
 
 \begin{figure}[ht]
     \centering
@@ -59,6 +105,8 @@ Repeat every benchmark 10 times as they are non-deterministic
 % Another set of traces (BurstGPT)
 \clearpage
 \subsubsection{BurstGPT}
+
+Source \autocite{wangBurstGPTRealworldWorkload2025}
 
 \begin{figure}[ht]
     \centering

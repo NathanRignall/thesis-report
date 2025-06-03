@@ -2,23 +2,104 @@
 \clearpage
 \section{Outer Solver}
 
+We consider a resource allocation problem where the goal is to optimise a black-box objective function \( f: \mathcal{X} \to \mathbb{R} \) using Bayesian Optimisation.
+The function \( f \) is expensive to evaluate and only accessible via noisy observations. 
+The domain \( \mathcal{X} \subseteq \mathbb{R}^d \) represents a constrained space defined by hardware inventory limits.
+Our objective is to find an optimal configuration of GPU allocations that maximizes the function \( f \).
+
+%
+%\subsubsection*{Bayesian Optimization Formulation}
+%
+%Bayesian Optimization models the objective function \( f \) using a probabilistic surrogate model \( \hat{f}(x) \), typically a Gaussian Process (GP):
+%
+%\[
+%\hat{f}(x) \sim \mathcal{GP}(\mu(x), k(x, x'))
+%\]
+%
+%An acquisition function \( \alpha(x; \hat{f}) \) is used to determine the next point to evaluate:
+%
+%\[
+%x_{t+1} = \arg \max_{x \in \mathcal{X}} \alpha(x; \hat{f}_t)
+%\]
+%
+%This optimization is subject to a set of resource constraints, which are defined below.
+
 \todo{
 
-Why BO is difficult with high dimensionality, how we can reduce it with simple algorithm.
+Intro to Bayesian Optimisation
+
+SAASBO
 
 }
 
 \subsection{Direct Island Generation}
 
+In the direct island generation approach, islands are explicitly defined within the Bayesian Optimisation process.
+Configurations correspond to a fixed number of islands, with each candidate solution representing a specific allocation of resources.
+The number of GPUs in each island is directly part of the output space, where specific variables represent the GPU count per slot.
+This setup provides precise control over how resources are grouped, but it also requires well-defined constraints to ensure that all generated configurations are valid.
+
+\subsubsection*{Parameters}
+
+\begin{itemize}
+    \item \( G \): the set of GPU types, e.g., \( G = \{\text{A100}, \text{V100}, \ldots\} \)
+    \item \( K \): the number of GPU slots per type
+    \item \( x_{g,k} \): the integer decision variable representing the number of GPUs of type \( g \in G \) assigned to slot \( k \in \{1, \ldots, K\} \)
+    \item \( I_g \): the total inventory of GPU type \( g \in G \)
+\end{itemize}
+
+Each parameter \( x_{g,k} \) is bounded:
+
+\[
+x_{g,k} \in \{0, 1, \ldots, I_g\}, \quad \forall g \in G, \; \forall k \in \{1, \ldots, K\}
+\]
+
+\subsubsection*{Constraints}
+
+For each GPU type \( g \in G \), we enforce that the total number of GPUs allocated across all \( K \) slots does not exceed the inventory \( I_g \):
+
+\[
+\sum_{k=1}^{K} x_{g,k} \leq I_g, \quad \forall g \in G
+\]
+
+%These constraints define a feasible subspace \( \mathcal{X} \subseteq \mathbb{R}^d \), over which the Bayesian Optimization is performed.
+
+%\subsubsection*{Search Space Definition}
+%
+%In implementation (e.g., using Ax or BoTorch), the search space \( \mathcal{X} \) is constructed by defining:
+%\begin{itemize}
+%    \item A list of bounded integer parameters \( \{x_{g,k}\} \)
+%    \item A set of linear \texttt{SumConstraint} objects that enforce the inventory limits
+%\end{itemize}
+%
+%These constraints are handled internally by the BO engine when sampling candidate configurations during optimization.
+
+
 \todo{
 
-	How the first version of this worked
+	How the first version of this worked...
+	
+	What are the problems with it...
 
 }
 
-\subsection{Island Divider}
-The primary goal of the island divider procedure is to programmatically divide a given total number of GPUs of a specific type into a list of smaller, integer‐sized islands.
+\clearpage
 
+\subsection{Divider Island Generation}
+
+The divider island generation method uses a more abstract representation that substantially reduces the dimensionality of the problem.
+Explicit allocation at the slot level requires one parameter per slot per GPU type, resulting in a parameter space of size \( |G| \times K \).
+This approach becomes computationally expensive due to the high number of variables and the need for constraints to ensure valid configurations.
+
+To address this, the divider-based approach reduces the search space to just two parameters per GPU type: the total number of islands and a scalar that controls the balance of GPU allocation across those islands.
+ This formulation results in a significantly smaller parameter space of size \( |G| \times 2 \), enabling more efficient optimisation and faster convergence.
+
+An important advantage of this method is that it avoids the need for explicit resource constraints, which are otherwise necessary to enforce inventory limits and prevent infeasible configurations.
+By shifting from low-level allocation to higher-level distribution strategies, divider island generation maintains control over performance-critical characteristics while offering a more scalable and interpretable optimisation process.
+
+%The primary goal of the island divider procedure is to programmatically divide a given total number of GPUs of a specific type into a list of smaller, integer‐sized islands.
+
+\subsubsection{Input Variables}
 Let \(G_{\text{total}}\) denote the total number of GPUs available for that type, and let \(N_{\text{target}}\) represent the desired number of islands to create.
 We can allow the actual number of islands may be lower if there are not enough GPUs to satisfy the minimum‐size requirement.
 The parameter \(S_{\text{skew}}\) controls how any leftover GPUs (after each island has been assigned its minimum) are distributed: when \(S_{\text{skew}}\approx0.0\), the extra GPUs are spread as evenly as possible; if \(S_{\text{skew}}>0.0\), islands with higher indices receive proportionally more of the remainder; and if \(S_{\text{skew}}<0.0\), islands with lower indices receive more.
@@ -83,22 +164,42 @@ s_k^{\text{base\_int}} = \left\lfloor s_k^{\text{ideal}} \right\rfloor.
 \]
 The current island sizes (initialised to $I_{\text{min}}$) are then increased by these integer allocations.
 
-\todo{
+%\todo{
+%
+%Next, the discrepancy between the total allocated GPUs and the intended $G_{\text{remaining}}$ is computed. This discrepancy,
+%\[
+%D = \text{round} \left( G_{\text{remaining}} - \sum_{j=1}^{N_{\text{actual}}} s_j^{\text{base\_int}} \right),
+%\]
+%represents the number of GPUs that are still unassigned due to rounding down the fractional values. To distribute the $D$ leftover GPUs, we calculate the fractional part for each island as
+%\[
+%f_k = s_k^{\text{ideal}} - s_k^{\text{base\_int}},
+%\]
+%and identify the $D$ islands with the largest fractional parts. Each of these selected islands receives one additional GPU.
+%
+%At the end of this process, each island has a final size given by
+%\[
+%S_k = I_{\text{min}} + s_k^{\text{base\_int}} + \delta_k,
+%\]
+%where $\delta_k \in \{0, 1\}$ depending on whether the island received an extra GPU during the discrepancy distribution. The total sum of all final island sizes equals $G_{\text{total}}$, satisfying the constraint that all available GPUs are used. The function returns this list of $N_{\text{actual}}$ island sizes as the result of the procedure.
+%
+%}
 
-Next, the discrepancy between the total allocated GPUs and the intended $G_{\text{remaining}}$ is computed. This discrepancy,
-\[
-D = \text{round} \left( G_{\text{remaining}} - \sum_{j=1}^{N_{\text{actual}}} s_j^{\text{base\_int}} \right),
-\]
-represents the number of GPUs that are still unassigned due to rounding down the fractional values. To distribute the $D$ leftover GPUs, we calculate the fractional part for each island as
-\[
-f_k = s_k^{\text{ideal}} - s_k^{\text{base\_int}},
-\]
-and identify the $D$ islands with the largest fractional parts. Each of these selected islands receives one additional GPU.
 
-At the end of this process, each island has a final size given by
-\[
-S_k = I_{\text{min}} + s_k^{\text{base\_int}} + \delta_k,
-\]
-where $\delta_k \in \{0, 1\}$ depending on whether the island received an extra GPU during the discrepancy distribution. The total sum of all final island sizes equals $G_{\text{total}}$, satisfying the constraint that all available GPUs are used. The function returns this list of $N_{\text{actual}}$ island sizes as the result of the procedure.
+\subsubsection*{Parameters}
 
-}
+Let:
+\begin{itemize}
+    \item \( G \): the set of GPU types, e.g., \( G = \{\text{A100}, \text{V100}, \ldots\} \)
+    \item \( n_g \): the number of islands for GPU type \( g \in G \)
+    \item \( s_g \): a scalar value representing the skew or balance in GPU allocation across the \( n_g \) islands for GPU type \( g \)
+    \item \( I_g \): the total available inventory of GPU type \( g \)
+\end{itemize}
+
+The optimization parameters for each GPU type \( g \in G \) are:
+\[
+(n_g, s_g) \in \mathbb{Z}_{\geq 1} \times [0, 1]
+\]
+
+%Here, \( n_g \) is an integer representing how many islands to distribute GPUs across, and \( s_g \in [0, 1] \) controls how evenly the GPUs are distributed across those islands. For example, \( s_g = 0 \) could represent perfectly balanced islands (equal GPU count per island), while \( s_g = 1 \) could represent maximal skew (e.g., one island with most of the GPUs, others with minimal or none).
+
+These two parameters per GPU type define the entire resource distribution strategy, allowing the Bayesian Optimization process to search over high-level allocation patterns while implicitly satisfying inventory constraints by design.
