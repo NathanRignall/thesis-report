@@ -3,40 +3,230 @@
 
 The \textit{inner loop} receives an island layout proposal from the \textit{outer loop}, this layout is specified as a finite index set \(\mathcal{I} \;=\; \{\,i = 1,\dots,|\mathcal{I}|\}\), where each island \(i\) is represented by a pair \(\bigl(t_{i},s_{i}\bigr)\).  
 Here, \(t_{i}\in T\) denotes the GPU type assigned to island \(i\), and \(s_{i}\in \mathbb{Z}_{\ge 0}\) indicates the number of GPUs of type \(t_{i}\) allocated to that island.
-The outer loop guarantees that these allocations respect the total‐inventory constraints.
+The \textit{outer loop} guarantees that these allocations respect the total‐inventory constraints.
 
 Given the predefined island layout \(\bigl\{(t_{j},s_{j})\bigr\}_{j=1}^{|\mathcal{I}|}\), the inner loop’s only task is to assign workloads of different prefill and decode lengths.
 No further modification of \(t_{i}\) or \(s_{i}\) takes place at this stage, as the inner loop focuses entirely on determining the optimal bin-packing configuration.
 
-We can outline the steps of the \textit{inner loop} as follow: 
+We can outline the steps of the \textit{inner loop} as follows: 
 
 \begin{enumerate}
-    \item \textbf{Form Ranges}  
+    \item \textbf{Formulate Ranges.}  
     Take the specific workload distribution $w$, and separate into a series of ranges $\mathcal{R}$ using a specified resolution (\autoref{chap:resolution})
     
-    \item \textbf{Prefill Configuration Generation \& Benchmark}  
+    \item \textbf{Prefill Configuration Generation \& Benchmark.}  
     Identify the best prefill configuration ($c_{\mathrm{prefill}}$) for each island \(i\), and return the benchmark results describing the throughput for each range (\autoref{chap:prefill-parallelism}).
     
-    \item \textbf{Decode Config Generation \& Benchmark}  
+    \item \textbf{Decode Config Generation \& Benchmark.}  
     Identify the best decode configuration ($c_{\mathrm{decode}}$) for each island \(i\), and return the benchmark results describing the throughput for each range (\autoref{chap:decode-parallelism}).
     
-    \item \textbf{Problem Specification}  
+    \item \textbf{Problem Specification.}  
     Formulate the exact optimisation problem based on the provided prefill and decode benchmarks (\autoref{chap:linear-problem}).
     
-    \item \textbf{Solve}  
+    \item \textbf{Solve.}  
     Invoke the optimiser on the specified problem, to generate the best solution given the input parameters.
     
-    \item \textbf{Results}  
+    \item \textbf{Results.}  
     Extract the final workload‐assignment solution from the solver’s output, including any intermediary variables for debugging.
-    
 \end{enumerate}
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth,height=6cm]{example-image-a}
+    \caption[Diagram showing effective purpose of \textit{inner loop}]
+    {Diagram showing effective purpose of \textit{inner loop}.}
+    \label{fig:04-inner-loop-demo}
+\end{figure}
+
 % Many linear solution
-\subsection{Linear Representation}
+\clearpage
+\subsection{Problem Formulation}
+\label{chap:linear-problem}
 
-We can take the learning from the previous optimisation problem (\autoref{chap:constraint-optimisation}) to linearise our problem and combine prefill with the decode phases.
-We can also take the learning from the solution resolution (\autoref{chap:resolution}), to reduce the number of variables and the problem complexity.
+We take the non‐linear problem formulation from \autoref{chap:constraint-optimisation}, which contained ratios such as \(\sigma_s = R_s / R\), and transform it into an entirely linear program by introducing auxiliary variables and linear constraints.
+In parallel, we incorporate the “range” abstraction from \autoref{chap:resolution} so that instead of summing over every sequence length, we only sum over a small set of ranges \(J\).
+We also modify the problem to contain assignment variables (\(x\) values) for both prefill and decode.
+The result is a single, linearised load‐balancing problem that jointly optimises prefill and decode throughput.
 
+% Do I also need to add in here about the assumption that the benchmark stage has been completed?
+
+\subsubsection{Linearisation Steps}
+In the original non‐linear problem, each range’s achieved share \(\sigma_j\) involved dividing by the total throughput \(R\), (\(\sigma_j = R_j / R\)).
+We avoid division by introducing one auxiliary variable per range and enforcing deviations through linear inequalities:
+  \[
+    R_{j} - p_j\,R \;\le\; \delta_j,\qquad
+    p_j\,R - R_{j} \;\le\; \delta_j,\qquad
+    \delta_j \;\le\; \tau\,p_j\,R,
+  \]
+  for \(R_j = R_{j}^{\mathrm{prefill}}\) or \(R_{j}^{\mathrm{decode}}\) and \(R = R_{\mathrm{prefill}}\) or \(R_{\mathrm{decode}}\).
+
+Whenever an absolute deviation \(\lvert R_j - p_j R\rvert\) appears in the original objective, we replace it by a nonnegative slack variable \(\delta_j\) and two linear inequalities, ensuring \(\delta_j \ge \lvert R_j - p_j R\rvert\).
+By defining \(R_{j}^{\mathrm{prefill}}\), \(R_{j}^{\mathrm{decode}}\), \(R_{\mathrm{prefill}}\), and \(R_{\mathrm{decode}}\) as linear combinations of the \(x\)-variables, all throughput expressions become linear functions of the decision variables.
+Finally, to prevent zero‐throughput solutions, we add linear lower‐bounds \(R_{\mathrm{prefill}} \;\ge\; \varepsilon\), \(R_{\mathrm{decode}} \;\ge\; \varepsilon\), where \(\varepsilon=0.01\) is a small positive constant.
+
+\subsubsection{Combining Prefill and Decode}
+Because we must serve both prefill and decode for each range \(j\), we include separate variables \(x_{\mathrm{prefill},\,ij}\)/\(x_{\mathrm{decode},\,ij}\) and corresponding per‐range throughput variables \(R_{j}^{\mathrm{prefill}}\)/\(R_{j}^{\mathrm{decode}}\).
+We also add a \(\delta_{\mathrm{match}}\) variable to encourage equal balancing of throughput across both prefill and decode which is enforced by another pair of linear inequalities per range.
+so that \(\delta_{\mathrm{match},\,j} \ge \lvert R_{j}^{\mathrm{decode}} - R_{j}^{\mathrm{prefill}}\rvert\).
+By penalising these matching deviations in the objective, we ensure a balance between prefill and decode stages.
+
+We also ensure each island is either performing prefill or decode by introducing a binary variable \(z_i\in\{0,1\}\) per island.
+Along with the constraints: \(x_{\mathrm{prefill},\,i j} \;\le\; 1 - z_i\), \(x_{\mathrm{decode},\,i j} \;\le\; z_i\),  \(\forall\,i\in I,\;j\in J\), so that if \(z_i=1\), the island’s \(x_{\mathrm{prefill},\,ij}\) are forced to zero (decode‐only), and if \(z_i=0\), the island’s \(x_{\mathrm{decode},\,ij}\) are zero (prefill‐only).
+
+%\[
+%  x_{\mathrm{prefill},\,i j} \;\le\; 1 - z_i,
+%  \qquad
+%  x_{\mathrm{decode},\,i j} \;\le\; z_i,
+%  \quad \forall\,i\in I,\;j\in J,
+%\]
+
+\subsubsection*{Input Data}
+\[
+\begin{aligned}
+& I &&\text{(set of GPU islands)},\\
+& J &&\text{(set of ranges, indexed by }j\text{)},\\
+& b^{\mathrm{prefill}}_{i j} &&\text{(measured prefill throughput of island }i\text{ on range }j\text{)},\\
+& b^{\mathrm{decode}}_{i j} &&\text{(measured decode throughput of island }i\text{ on range }j\text{)},\\
+& p_j &&\text{(target probability of range }j\text{ under workload }w),\quad \sum_{j\in J} p_j = 1,\\
+& \tau &&\text{(maximum allowable per‐range deviation factor)},\\
+& M &&\text{(large constant for scaling deviation weights)},\\
+& \lambda_{\mathrm{dev},\,j} &&= \frac{M}{1 + p_j}\quad\text{(trade‐off weight for deviations in range }j\text{).}\\
+& \varepsilon &&= 0.01 \quad\text{(minimum allowable throughput)}.
+\end{aligned}
+\]
+
+\subsubsection*{Decision Variables}
+\[
+\begin{aligned}
+& x_{\mathrm{prefill},\,i j}\;\ge0,  &&\forall\,i\in I,\;j\in J,\quad\text{(fraction of island \(i\)’s capacity to prefill range \(j\))};\\
+& x_{\mathrm{decode},\,i j}\;\ge0,  &&\forall\,i\in I,\;j\in J,\quad\text{(fraction of island \(i\)’s capacity to decode range \(j\))};\\
+& z_i \in \{0,1\}, &&\forall\,i\in I,\quad\text{(\(z_i=1\) if island \(i\) is assigned to decode, else prefill).}
+\end{aligned}
+\]
+
+\subsubsection*{Intermediate Quantities}
+\begin{itemize}
+  \item \textbf{Per‐range throughputs:}
+  \[
+    R_{j}^{\mathrm{prefill}}
+    = \sum_{i\in I} b^{\mathrm{prefill}}_{i j}\;x_{\mathrm{prefill},\,i j}, \quad
+    R_{j}^{\mathrm{decode}}
+    = \sum_{i\in I} b^{\mathrm{decode}}_{i j}\;x_{\mathrm{decode},\,i j},
+    \quad \forall\,j\in J.
+  \]
+
+  \item \textbf{Total throughputs:}
+  \[
+    R_{\mathrm{prefill}}
+    = \sum_{j\in J} R_{j}^{\mathrm{prefill}}, \quad
+    R_{\mathrm{decode}}
+    = \sum_{j\in J} R_{j}^{\mathrm{decode}}.
+  \]
+
+  \item \textbf{Per‐range deviations:}
+  \[
+    \delta_{\mathrm{prefill},\,j} \ge 0,\quad
+    \delta_{\mathrm{decode},\,j} \ge 0,\quad
+    \delta_{\mathrm{match},\,j} \ge 0,
+    \quad \forall\,j\in J.
+  \]
+
+  \item \textbf{Total deviation:}
+  \[
+    D_{\mathrm{total}}
+    = \sum_{j\in J}\bigl(\delta_{\mathrm{decode},\,j} + \delta_{\mathrm{prefill},\,j} + \delta_{\mathrm{match},\,j}\bigr).
+  \]
+\end{itemize}
+
+\subsubsection*{Constraints}
+\begin{enumerate}
+  \item \textbf{Each island allocates exactly one unit of capacity across prefill/decode and ranges:}
+  \[
+    \sum_{j\in J}\bigl(x_{\mathrm{prefill},\,i j} + x_{\mathrm{decode},\,i j}\bigr) = 1
+    \quad\forall\,i\in I.
+  \]
+
+  \item \textbf{Exclusive prefill/decode assignment per island:}
+  \[
+    x_{\mathrm{prefill},\,i j} \;\le\; 1 - z_i,
+    \qquad
+    x_{\mathrm{decode},\,i j} \;\le\; z_i,
+    \quad
+    \forall\,i\in I,\;j\in J.
+  \]
+
+  \item \textbf{Enforce a minimum performance value:}
+  \[
+    R_{\mathrm{prefill}} \;\ge\; \varepsilon,
+    \quad
+    R_{\mathrm{decode}} \;\ge\; \varepsilon.
+  \]
+
+  \item \textbf{Deviation constraints for decode (per range \(j\)):}
+  \[
+  \begin{aligned}
+    R_{j}^{\mathrm{decode}} - p_j\,R_{\mathrm{decode}} &\le \delta_{\mathrm{decode},\,j},\\
+    p_j\,R_{\mathrm{decode}} - R_{j}^{\mathrm{decode}} &\le \delta_{\mathrm{decode},\,j},\\
+    \delta_{\mathrm{decode},\,j} &\le \tau\,p_j\,R_{\mathrm{decode}},
+  \end{aligned}
+  \quad
+  \forall\,j\in J.
+  \]
+
+  \item \textbf{Deviation constraints for prefill (per range \(j\)):}
+  \[
+  \begin{aligned}
+    R_{j}^{\mathrm{prefill}} - p_j\,R_{\mathrm{prefill}} &\le \delta_{\mathrm{prefill},\,j},\\
+    p_j\,R_{\mathrm{prefill}} - R_{j}^{\mathrm{prefill}} &\le \delta_{\mathrm{prefill},\,j},\\
+    \delta_{\mathrm{prefill},\,j} &\le \tau\,p_j\,R_{\mathrm{prefill}},
+  \end{aligned}
+  \quad
+  \forall\,j\in J.
+  \]
+
+  \item \textbf{Match throughput between prefill and decode (per range \(j\)):}
+  \[
+  \begin{aligned}
+    R_{j}^{\mathrm{decode}} - R_{j}^{\mathrm{prefill}} &\le \delta_{\mathrm{match},\,j},\\
+    R_{j}^{\mathrm{prefill}} - R_{j}^{\mathrm{decode}} &\le \delta_{\mathrm{match},\,j},
+  \end{aligned}
+  \quad
+  \forall\,j\in J.
+  \]
+
+  \item \textbf{Total deviation across all ranges:}
+  \[
+    \sum_{j\in J} \bigl(\delta_{\mathrm{decode},\,j} + \delta_{\mathrm{prefill},\,j} + \delta_{\mathrm{match},\,j}\bigr)
+    = D_{\mathrm{total}}.
+  \]
+\end{enumerate}
+
+\subsubsection*{Objective}
+\[
+\max \Biggl(
+  R_{\mathrm{decode}} + R_{\mathrm{prefill}}
+  \;-\; \sum_{j\in J} \lambda_{\mathrm{dev},\,j}\,\bigl(\delta_{\mathrm{decode},\,j} + \delta_{\mathrm{prefill},\,j} + \delta_{\mathrm{match},\,j}\bigr)
+\Biggr).
+\]
+
+\clearpage
+\subsection{Problem Analysis}
+
+How will this be implemented in python
+
+\subsection{Implementation Optimisation}
+
+How we improve this solution further with caching
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth,height=5cm]{example-image-a}
+    \caption[Diagram or graph showing affect of caching]
+    {Diagram or graph showing effect of caching.}
+    \label{fig:04-inner-loop-cache}
+\end{figure}
+
+\clearpage
 
 % THIS IS USEFUL TEXT - BUT BETTER FOR LATER - NOT SURE IF EVEN NEEDED
 

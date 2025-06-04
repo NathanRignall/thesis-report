@@ -33,7 +33,7 @@ x_i(s)\;\ge\;0
 \]
 
 \subsubsection*{Intermediate Quantities}
-\begin{enumerate}
+\begin{itemize}
   \item \textbf{Performance per cell:}
   \[
     r_i(s) = b_i(s)\,x_i(s).
@@ -59,7 +59,7 @@ x_i(s)\;\ge\;0
     \qquad
     \Delta = \sum_{s\in S}\delta_s.
   \]
-\end{enumerate}
+\end{itemize}
 
 \subsubsection*{Objective}
 Maximise
@@ -88,6 +88,6 @@ Furthermore, we statically define $I$ to a set of curated islands, and the optim
 In order to generate the most optimal solution, we need to choose the best set of island sizes for each GPU type.
 However, adding this decision process to the constraint optimisation problem increases its complexity, as it effectively turns a bounded bin packing problem into an unbounded one.
 The optimiser must now determine not only the workload allocation but also the optimal sizes and number of islands.
-Hence, we need to formulate an architectural approach that incorporates this logic, which we detail in \autoref{chap:system-architecture}.
+Hence, we need to formulate an architectural approach that incorporates this logic, which we detail in \autoref{chap:problem-formulation}.
 
 % include a digram demonstrating a bounded vs unbounded.

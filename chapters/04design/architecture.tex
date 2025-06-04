@@ -1,27 +1,21 @@
-% Architecture
-\section{System Architecture}
-\label{chap:system-architecture}
-
-%Furthermore, we statically define I to a set of curated islands, and the optimiser simply fits the workload to these islands.
-%In order to generate the most optimal solution, we need to choose the best set of island sizes for each GPU type.
-%However, adding this decision process to the constraint optimisation problem increases its complexity, as it effectively turns a bounded bin packing problem into an unbounded one.
-%The optimiser must now determine not only the workload allocation but also the optimal sizes and number of islands.
-%Hence, we need to formulate an architectural approach that incorporates this logic, which we detail in \autoref{chap:architecture}.
+% Problem formulation
+\section{Problem Formulation}
+\label{chap:problem-formulation}
 
 During \autoref{chap:constraint-optimisation} we formulated a non-linear bounded bin‐packing problem, by constraining the islands to a pre‐defined type and size.
-In a true scheduling problem we expect to be allocated an inventory of different GPU types, let \(T\) be the set of GPU types.
-For each \(t\in T\), let \(n_t\) be the number of GPUs of type \(t\) allocated in the inventory.
+In a true scheduling problem we expect to be allocated an inventory of different GPU types, not formed islands.
+Let \(T\) be the set of GPU types an for each \(t\in T\), let \(n_t\) be the number of GPUs of type \(t\) allocated in the inventory.
 The full GPU inventory is then the vector \(\bigl(n_t\bigr)_{t\in T}\), with total number of GPUs in the system modelled as \(N = \sum_{t\in T} n_t\).
 
 Similar to ThunderServe \autocite{jiangThunderServeHighperformanceCostefficient2025}, we can separate this scheduling problem as two separate, distinct stages.
 The first stage is the island layout generation, which we can treat as a search‐like optimisation problem in which we explore combinations of GPU island sizes and types.
-The second stage is the bounded bin‐packing step, a deterministic problem that assigns workload ranges to the pre‐computed islands to maximise throughput for a given workload.
+The second stage is the bounded bin‐packing step, a deterministic problem that assigns workload ranges to the pre‐computed islands to maximise throughput.
 By decoupling layout design from the packing phase, we can leverage specialised solvers for each subproblem and significantly reduce overall computational complexity. 
 
-We refer to the bounded bin packing problem as the \textit{inner loop}, and the outer optimization process as the \textit{outer loop}, as illustrated in \autoref{fig:04-system-architecture}.
+We refer to the bounded bin packing problem as the \textit{inner loop}, and the outer optimisation process as the \textit{outer loop}, as illustrated in \autoref{fig:04-problem-formulation}.
 The \textit{outer loop} is responsible for generating promising island layouts, which are then passed to the \textit{inner loop} for resource packing.
 The resulting throughput is returned to the \textit{outer loop}, allowing the optimisation process to evaluate and refine its search for effective configurations.
- This iterative cycle can be repeated multiple times to generate an optimal solution.
+ This iterative cycle can be repeated multiple times to generate progressively generate an optimum solution.
  
 \begin{figure}[ht]
     \centering
@@ -30,7 +24,6 @@ The resulting throughput is returned to the \textit{outer loop}, allowing the op
 			every node/.style={draw, align=center, minimum height=1.2cm, minimum width=3cm},
 			arrow/.style={->, thick}
 		]
-		
 		% Nodes
 		\node (outer) {Outer Optimiser};
 		\node (inner) [right=of outer] {Inner min-cost\\ flow};
@@ -38,5 +31,5 @@ The resulting throughput is returned to the \textit{outer loop}, allowing the op
 	\end{tikzpicture}
     \caption[System Archiecture]
     {System Archiecture}
-    \label{fig:04-system-architecture}
+    \label{fig:04-problem-formulation}
 \end{figure}

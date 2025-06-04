@@ -32,6 +32,16 @@ SAASBO
 
 }
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth,height=6cm]{example-image-a}
+    \caption[Diagram showing effective purpose of \textit{outer loop}]
+    {Diagram showing effective purpose of \textit{outer loop}.}
+    \label{fig:04-outer-loop-demo}
+\end{figure}
+
+% First BO Method
+\clearpage
 \subsection{Direct Island Generation}
 
 In the direct island generation approach, islands are explicitly defined within the Bayesian Optimisation process.
@@ -83,8 +93,8 @@ For each GPU type \( g \in G \), we enforce that the total number of GPUs alloca
 
 }
 
+% Second BO method
 \clearpage
-
 \subsection{Divider Island Generation}
 
 The divider island generation method uses a more abstract representation that substantially reduces the dimensionality of the problem.
@@ -106,6 +116,14 @@ The parameter \(S_{\text{skew}}\) controls how any leftover GPUs (after each isl
 Finally, \(I_{\text{min}}\) specifies the minimum number of GPUs that any island must contain.
 
 % we repeat this for every GPU type
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth,height=5cm]{example-image-a}
+    \caption[Graph of displaying the effect of changing \(S_{\text{skew}}\)]
+    {Graph of displaying the effect of changing \(S_{\text{skew}}\).}
+    \label{fig:04-skew-changes}
+\end{figure}
 
 \subsubsection{Preconditions}
 Initially, we verify that the input parameters meet a series of constraints, if any of these conditions is not met, the procedure raises an error and terminates immediately.
