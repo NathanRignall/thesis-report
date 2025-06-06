@@ -1,7 +1,7 @@
 \section{Simulator}
 
 In order to be able to develop an advanced heterogenous LLM scheduler, we need access to many high-performance GPUs to test our schedule configurations.
-Unfortunately, GPU-hours are prohibitively expensive and using such hours for “dummy” workloads to test a scheduler would be considered a waste of resources.
+Unfortunately, GPU-hours are prohibitively expensive and using such hours for ``dummy'' workloads to test a scheduler would be considered a waste of resources.
 Instead, we utilise the latest simulator technology to estimate the performance of LLM inference given a set of input parameters.
 Several simulators exist that attempt to model the performance of an LLM request by using estimation techniques.
 
@@ -11,10 +11,10 @@ Several simulators exist that attempt to model the performance of an LLM request
 
 \textbf{Shallowsim \autocite{icezack12Icezack12Shallowsim2025}} is a specialist simulator designed to estimate the compute times for different LLM request types.
 
-\textbf{LLMCompass \autocite{zhangHardwareEvaluationFramework2023}} (Need to look up)
+\textbf{LLMCompass \autocite{zhangHardwareEvaluationFramework2023}} (more detail)
 
 We Select Shallowsim for its transparency for calculations (simplicity).
-And support for Mixture of Expert models
+And support for Mixture of Expert models (key novel).
 
 }
 
@@ -24,22 +24,23 @@ And support for Mixture of Expert models
 
 \textbf{Prefill}
 
-Dense-MLA (dense Multi-head/Multi-query Attention compute)
+Dense-MLA (dense Multi-head/Multi-query Attention compute),
 
-TP-MLA (Dense-MLA plus the Tensor-Parallel all-reduce)
+TP-MLA (Dense-MLA plus the Tensor-Parallel all-reduce),
 
-Dense-MLP (feed-forward network compute)
+Dense-MLP (feed-forward network compute),
 
-Shared-Expert (MoE expert run that every token visits)
-Routed-Expert (MoE expert run that only selected tokens visit)
+Shared-Expert (MoE expert run that every token visits),
+Routed-Expert (MoE expert run that only selected tokens visit),
 
 Every token first passes through the Shared Expert, but a subset of tokens are also routed to extra specialists. This is modelled with the Routed Expert function.
 
-Dispatch (All-to-All that ships tokens out to remote experts)
-Combine (All-to-All that brings tokens back)
+Dispatch (All-to-All that ships tokens out to remote experts),
+Combine (All-to-All that brings tokens back),
 
 Sending activations to the respective routed expert nodes is modelled using the Dispatch step, the Combine step then models how processed activations are collated back together. These two functions model the network overhead of LLM queries.
 
+\textit{
 Compute Time
 -	Dense MLA, Dense MLP (Dense Layers)
 -	TP-MLA, Shared Expert, Routed Expert (Sparse Layers)
@@ -50,18 +51,20 @@ Overlap Penalties
 -	If Dispatch is longer than Routed Expert
 Sum
 -	Compute + Communication + Any Overlap = Prefill Time
+}
 
 \subsubsection{Decode}
 
-Load-KV
-Dense-MLA (as prefill)
-Sparse-MLA
-Dense-MLP (as prefill)
-Shared-Expert (as prefill)
-Routed-Expert (as prefill)
-Dispatch (as prefill)
-Combine (as prefill)
+Load-KV,
+Dense-MLA (as prefill),
+Sparse-MLA,
+Dense-MLP (as prefill),
+Shared-Expert (as prefill),
+Routed-Expert (as prefill),
+Dispatch (as prefill),
+Combine (as prefill),
 
+\textit{
 Compute Time
 -	Dense MLA, Dense MLP (Dense Layers)
 -	Sparse MLA, Shared Expert, Routed Expert (Sparse Layers)
@@ -71,15 +74,18 @@ Overlap Penalties
 -	TODO
 Sum
 -	TODO = Per token decode time 
+}
+
+}
 
 \subsection{Modifactions}
 
-What we have done to modify the shallowsim simulator.
-
-As designed, shallowsim is build for profiling several different GPU configurations at once.
-
-For our system, we are particularly interested in per-configuration results
-
+\todo{
+\begin{itemize}
+\item What we have done to modify the shallowsim simulator.
+\item As designed, shallowsim is build for profiling several different GPU configurations at once.
+\item For our system, we are particularly interested in per-configuration results.
+\end{itemize}
 }
 
 \subsection{Usage}

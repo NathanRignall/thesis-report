@@ -44,13 +44,14 @@ Transformers form the basis of modern natural language processing due to their s
 What is an LLM?
 
 \subsection{Computation Steps}
-There are several compute steps involved in a Transformer model’s forward pass, during inference tasks.
+There are several compute steps involved in a Transformer model's forward pass, during inference tasks.
 The process begins with Input Embedding and Positional Encoding where each token in the input sequence is converted into a vector, using a learned embedding matrix.
 Next, the model computes the Query (Q), Key (K) and Value (V) vectors for each token, this is calculated by projecting the input embeddings through learned linear transformations.
-%Using the Q, K, and V values the model performs Scaled Dot-Product Attention 
+%Using the Q, K, and V values the model performs Scaled Dot-Product Attention 
+
 Models can also use Multi-Head Attention
 %
-Instead of computing a single attention operation, the model splits the Q, K, and V matrices into multiple “heads”, concatenates the outputs 
+Instead of computing a single attention operation, the model splits the Q, K, and V matrices into multiple ``head'', concatenates the outputs 
 %
 The Add and Normalisation steps follow attention
 -	The original input is added to the output and normalised
@@ -67,19 +68,19 @@ Output
 We can separate the processing phases of LLM model inference steps into two distinct categories, with clear differences in hardware processing requirements.
 
 % Prefill
-The prefill stage processes the input tokens to compute the transformer model’s intermediate states.
+The prefill stage processes the input tokens to compute the transformer model's intermediate states.
 This includes calculating the positional embeddings and populating the KV cache, which are subsequently used to generate the first new token.
 
 This specific phase is easily parallelized because at every stage of computation (per token) the full input sequence is known.
 Hence, this is viewed as a matrix-matrix operation which can easily saturate a GPUs available compute.
-\textit{In reference to a transformer’s computation steps, all stages are performed for every token in the sequence but can be heavily parallelised.}
+\textit{In reference to a transformer's computation steps, all stages are performed for every token in the sequence but can be heavily parallelised.}
 
 % Decode
 The decode phase generates each output token one at a time, this is because each token computation is dependent on the previous token.
 Hence, each token must be calculated sequentially.
 The speed at which the decode phase can execute is heavily dependent on the speed at which weights, keys, values and activations can be loaded into the correct areas of GPU memory.
 Hence this phase usually saturates the memory bandwidth of a GPU before saturating the compute performance.
-\textit{In reference to a transformer’s computation steps, all stages are performed, but for only the new token generated - this is due key-value caching.}
+\textit{In reference to a transformer's computation steps, all stages are performed, but for only the new token generated - this is due key-value caching.}
 
 %Diagram of Prefill vs Decode
 
@@ -90,33 +91,47 @@ Key value caching is an optimisation used during inference steps for transformer
 
 \subsection{Mixture of Experts} 
 
-\todo{A neural network architecture specifically design to scale up models
-%
-Instead of one big model
-Pool of expert networks
-For each input token, usually only a subset of these experts are activated
-Router chooses which experts to use based on the input
-%
-Designed to be compute efficient
-Only the activate experts consume compute
-Allows for scaling up a model’s capacity (without linear increase in inference cost)
-%
-Good
-Big model cpacpaity
-Better scling lwas
-Felxiblke
-%
-Bad
-Routing instability
-Load balancing
-Complexity}
+\todo{
+\begin{itemize}
+\item To Complete.
+\end{itemize}
+}
+
+%\todo{
+%A neural network architecture specifically design to scale up models
+%%
+%Instead of one big model
+%Pool of expert networks
+%For each input token, usually only a subset of these experts are activated
+%Router chooses which experts to use based on the input
+%%
+%Designed to be compute efficient
+%Only the activate experts consume compute
+%Allows for scaling up a model's capacity (without linear increase in inference cost)
+%%
+%Good
+%Big model cpacpaity
+%Better scling lwas
+%Felxiblke
+%%
+%Bad
+%Routing instability
+%Load balancing
+%Complexity
+%}
 
 % How this problem is different for MoE
 \subsection{DeepSeek Architecture}
 
-\todo{Some information about the DeepSeek architecture.
-%
-Focus on MoE, A2A etc.}
+\todo{
+\begin{itemize}
+\item To Complete. Focus on MoE, A2A etc.
+\end{itemize}
+}
+
+%\todo{Some information about the DeepSeek architecture.
+%%
+%Focus on MoE, A2A etc.}
 
 % What different parallelism techniques are available
 \section{Parallelism}
@@ -126,7 +141,7 @@ Hence, this technique is generally used to increase throughput of an overall sys
 
 %Example - batch of requests is split between 100 / 4 =25
 
-\textbf{Model parallelism} involves partitioning the model itself across several processing units, where each device is responsible for a portion of the model’s layers or operations. This is most helpful when a model cannot fit on a single device, due to memory demand greater than what is available.
+\textbf{Model parallelism} involves partitioning the model itself across several processing units, where each device is responsible for a portion of the model's layers or operations. This is most helpful when a model cannot fit on a single device, due to memory demand greater than what is available.
 
 \todo{Enables inference on devices that individually do not support
 %
@@ -157,7 +172,7 @@ Focus on latency, 99th percentile}
 
 \todo{Context on why talking about schedulers...
 
-Optimisation techniques…}
+Optimisation techniques...}
 
 % Heuristic
 \subsection{Heuristic-Based Methods}
@@ -189,7 +204,7 @@ Optimisation techniques…}
 
 % Search
 \subsection{Search-Based}
-Search-based Optimisation refers to methods that systematically or semi-randomly explore a given search space to find an optimal solution. Such techniques are often used to tune a scheduler’s parameters, but can also 
+Search-based Optimisation refers to methods that systematically or semi-randomly explore a given search space to find an optimal solution. Such techniques are often used to tune a scheduler's parameters, but can also 
 
 \todo{
 
@@ -224,4 +239,13 @@ Given problems are non-linear, it is harder to guarantee a globally optimal solu
 
 \textbf{Mixed Integer Programming (MIP)} is...
 
+}
+
+\section{Inference Challanges}
+
+\todo{
+\begin{itemize}
+\item Why inferences is hard.
+\item How workloads are modelled (code vs conversation).
+\end{itemize}
 }

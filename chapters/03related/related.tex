@@ -22,33 +22,36 @@
 %much. The correct choice will depend on what you're writing up, and
 %your own personal preference.
 
+%In the related work part, briefly talk about how existing works differ from yours. For instance, DistServe and Splitwise are used for efficient LLM inference and serving, but they fail to account for handling hardware heterogeneity and might obtain poor performance when deployed on a fully heterogeneous cluster with various GPU resources and network bandwidth. Additionally, HexGen and ThunderServe are responsible for LLM serving with heterogeneous clusters, but they fail to consider the unique characteristics of MoE architecture ……
+
 % Existing Schedulers
 \section{Case Studies}
 
 \todo{
 
-\subsection{Thunderserve}
+(Already complete. Notes in Obsidian, need to be transferred)
 
+\subsection{DistServe}
+DistServe \autocite{zhongDistServeDisaggregatingPrefill2024} (Introduce Prefill/Decode).
+
+\subsection{Splitwise}
+Splitwise \autocite{patelSplitwiseEfficientGenerative2024} (Introduce Prefill/Decode).
+
+
+
+\subsection{Thunderserve}
 Thunderserve \cite{jiangThunderServeHighperformanceCostefficient2025}
 
 \subsection{HexGen}
-
 HexGen \autocite{jiangHexGenGenerativeInference2024}
 
-\subsection{DistServe}
-
-DistServe \autocite{zhongDistServeDisaggregatingPrefill2024}
-
-\subsection{Splitwise}
-
-Stuff \autocite{patelSplitwiseEfficientGenerative2024}
 
 \subsection{Summary}
 
-Stuff (General trends)
+HexGen and ThunderServe are responsible for LLM serving with heterogeneous clusters, but they fail to consider the unique characteristics of MoE architecture.
 
 \section{Future}
 
-Stuff (Possible Improvements)
+Possible Improvements, Lack of Moe
 
 }

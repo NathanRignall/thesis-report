@@ -1,4 +1,4 @@
-\graphicspath{{chapters/04design/graphs}}
+\graphicspath{{chapters/05evaluation/graphs}}
 
 \chapter{Evaluation}
 
@@ -7,60 +7,228 @@
 %chapter.
 
 \todo{
-
-	To do...
-
-	Repeat every benchmark 10 times as they are non-deterministic
-	
-	Compare heterogenous vs homogenous cases (show why heterogeneous is better)
-	
-	Display any benchmarks specific to MoE
-
+\begin{itemize}
+\item Intro to Chapter.
+\item Key - compare heterogenous vs homogenous (show why heterogeneous is better)
+\item Overall system performance (key graphs only).
+\end{itemize}
 }
 
 % inner loop by itself
-\clearpage
 \section{Inner Loop}
+\label{chap:}
+
+We test the \textit{inner loop} using four test cases (island layouts) shown in \autoref{tab:05-gpu-island}, which include two homogeneous scenarios and two heterogeneous scenarios.
+One scenario from both homogeneous and heterogeneous uses GPU islands of the same size, the other uses GPU islands of different sizes.
+These islands are crafted to show the importance of selecting appropriate island sizes and potential value of heterogeneous clusters.
+
+\begin{table}[ht]
+  \centering
+  \small
+  \begin{tabular}{@{} l l l l @{}}
+    \toprule
+    Island                      & GPU Model     & Sizes (Size × Count)                & Cost         \\
+    \midrule
+    (a) Homogeneous Same Size       & DGX-B300      & 32 × 8                              & —            \\
+    (b) Homogeneous Different Sizes & DGX-B300      & 32 × 2, 16 × 4, 8 × 8, 4 × 16        & —            \\
+    \midrule
+    \multirow{4}{*}{(c) Heterogeneous Same Size}
+                                   & DGX-B300      & 32 × 2                              & —            \\
+                                   & Rubin-NVL144  & 32 × 2                              & —            \\
+                                   & H800          & 32 × 2                              & —            \\
+                                   & H20           & 32 × 2                              & —            \\
+    \addlinespace
+    \multirow{4}{*}{(d) Heterogeneous Different Sizes}
+                                   & DGX-B300      & 32 × 1, 16 × 1, 8 × 1, 4 × 2         & —            \\
+                                   & Rubin-NVL144  & 32 × 1, 16 × 1, 8 × 1, 4 × 2         & —            \\
+                                   & H200          & 8 × 4, 4 × 8                        & —            \\
+                                   & H20           & 8 × 4, 4 × 8                        & —            \\
+    \bottomrule
+  \end{tabular}
+  \caption{GPU island test cases for \textit{inner loop} analysis, with two homogeneous scenarios and two heterogeneous scenarios}
+  \label{tab:05-gpu-island}
+\end{table}
+
+As the \textit{inner loop} solution generation is deterministic we only execute each test case once, unless stated otherwise.
+This is because the linear solver will produce the exact same solution upon every execution, given the same input variables.
+
+\clearpage
+\subsection{Solver Results}
+% TODO - Must also include all the input parameters the solver 
+
+We first simultaneously select the optimum parallelism configuration and benchmark the provided GPU islands for both prefill and decode.
+The resultant throughput values are displayed in \autoref{fig:05-inner-benchmark}, where we can see that every island class is able to contribute to prefill throughput, but not all islands are capable of decode.
+This is due to the decode phase requiring more memory to execute, hence not all islands are compatible.
+% TODO - Add explanation as to where the ranges are from.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{assignment_sample_benchmark.pdf}
-    \caption[Sample Benchmark]
-    {Sample Benchmark}
-    \label{fig:05-assignment-sample-benchmark}
+    \includegraphics[width=\textwidth]{inner_benchmark_all_inventories.pdf}
+    \caption[Benchmark results for every island test case] 
+    {Benchmark results for every island test case}
+    \label{fig:05-inner-benchmark}
 \end{figure}
+
+Using the collected benchmark values, we populate the $b^{\mathrm{prefill}}_{i j}$ and $b^{\mathrm{decode}}_{i j}$ variables in the linear solver.
+Then, using artificial workload as previously shown in \autoref{fig:04-sample-prefill-pdf}, we execute the solve function to find the optimum $x_{\mathrm{prefill},\,i j}$ and $x_{\mathrm{decode},\,i j}$ values.
+The resultant assignment percentages are displayed in \autoref{fig:05-inner-assignment} for both the prefill and decode phase.
+
+In the homogenous scenario, the assignment allocation percentages closely resemble the target workload.
+In contrast, heterogenous assignment allocation percentages appear random.
+This is to be expected, as it reflects the heterogeneous nature of island performance, where one island might be allocated few ranges due to its ``slow'' performance.
+Also, for all scenarios, one large island is generally allocated for decode and many islands for prefill, this displays that prefill is the bottleneck for throughput.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{assignment_sample_assignment}
-    \caption[Sample Assignment]
-    {Sample Assignment}
-    \label{fig:05-assignment-sample-assignment}
+    \includegraphics[width=\textwidth]{inner_assignment_all_inventories.pdf}
+    \caption[Assignment values percentage (per range) for each every island test case]
+    {Assignment values percentage (per range) for each every island test case, using artificial workload as described in \autoref{fig:04-sample-prefill-pdf}}
+    \label{fig:05-inner-assignment}
 \end{figure}
+
+Collating the assignment percentages with throughout measurements (\autoref{fig:05-inner-assignment} and \autoref{fig:05-inner-benchmark}) we can plot the actual throughput per island, shown in \autoref{fig:05-inner-throughput}.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{assignment_sample_assignment_benchmark}
-    \caption[Sample Throughput]
-    {Sample Throughput}
-    \label{fig:05-assignment-sample-assignment-benchmark}
+    \includegraphics[width=\textwidth]{inner_throughput_all_inventories.pdf}
+    \caption[Throughput per range for each every island test case]
+    {Throughput per range for each every island test case, using artificial workload as described in \autoref{fig:04-sample-prefill-pdf}}
+    \label{fig:05-inner-throughput}
 \end{figure}
+
+\clearpage
+\subsection{Evaluator Results}
+
+Previous plots demonstrate the allocation results using direct outputs from the linear solver at the specified range resolution.
+We need to evaluate the solutions using the complete expected input sequence length distribution $p(s \mid w)$ to highlight any differences in performance.
+These results are displayed in \autoref{fig:05-inner-trace-throughput}, where \textit{evaluated} refers to results from the evaluator and \textit{model} refers to results directly from the solver.
+We also include the workload \textit{trace} as a reference to what the target throughput distribution is.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{inner_trace_throughput}
+    \caption[Inner Trace Throughput]
+    {Inner Trace Throughput}
+    \label{fig:05-inner-trace-throughput}
+\end{figure}
+
+
+%display how the resolution impacts the solution
+
+%describe the graphs, like why each graph is different 
+
+
+%a plot of the throughput against cost for each island test case (show why heterogenous is better)
+
+
+\subsubsection{Evaluator Method}
+The true throughput is calculated by first benchmarking each exact sequence length (whilst also selecting the best parallelism configuration), for each island using the same method as described in \autoref{chap:inner-loop}.
+Then, the throughputs are weighted with the $p$ value of each sequence length $s$ along with the island percentage allocation $x$, of the range the sequence length resides within.
+
+% resolution
+\subsection{Resolution Impact}
+
+\todo{
+\begin{itemize}
+\item To Complete.
+\item How resolution impacts solution quality vs time.
+\end{itemize}
+}
+
+% resolution
+\subsection{Objective Impact}
+
+\todo{
+\begin{itemize}
+\item To Complete. 
+\item How the objective function has been tuned.
+\end{itemize}
+}
 
 % outer loop + inner loop
 \clearpage
 \section{Outer Loop}
 
+\todo{
+\begin{itemize}
+\item Test setup.
+\item Test approach (repeat 10 times).
+\end{itemize}
+}
+
+% Batch Size
+\subsection{Batch Size Analysis}
+
+\todo{
+\begin{itemize}
+\item How batch size influences results (variance).
+\item Solution achieved in 20 iterations.
+\end{itemize}
+}
+
+%Explain \autoref{fig:05-batch-analysis}
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{bo_demo.pdf}
-    \caption[Comparison of BO methods]
-    {Comparison of BO methods}
-    \label{fig:05-demo}
+    \includegraphics[width=\textwidth]{outer_batch_errorbars.pdf}
+    \caption[Batch Size Analysis]
+    {Batch Size Analysis}
+    \label{fig:05-batch-analysis}
 \end{figure}
+
+\todo{
+\begin{itemize}
+\item How long on average to best solution.
+\end{itemize}
+}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\textwidth]{outer_batch_deltas.pdf}
+    \caption[Batch Size Analysis (Time)]
+    {Batch Size Analysis (Time)}
+    \label{fig:05-batch-deltas}
+\end{figure}
+
+% Skew
+\clearpage
+\subsection{Skew Analysis}
+
+\todo{
+\begin{itemize}
+\item How changing the search params (skew) affects solution.
+\item 
+\end{itemize}
+}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{outer_skew_error_area.pdf}
+    \caption[Skew Analysis]
+    {Skew Analysis}
+    \label{fig:05-skew-analysis}
+\end{figure}
+
+% Skew
+\subsection{Number of Islands}
+
+\todo{
+\begin{itemize}
+\item How changing the search params (number of islands) affects solution.
+\end{itemize}
+}
 
 % Introduce where the traces have come from
 \clearpage
+\section{Real-World}
+
+\todo{
+\begin{itemize}
+\item End-to-end analysis with real-world traces.
+\end{itemize}
+}
+
 \subsection{Traces}
+\graphicspath{{chapters/04design/graphs}}
 
 % The main set of traces (Azure LLM)
 \subsubsection{Azure LLM}
@@ -143,3 +311,20 @@ Source \autocite{wangBurstGPTRealworldWorkload2025}
     \label{fig:05-traces-burst-gen-vs-context}
 \end{figure}
  
+ \clearpage
+ \subsection{Results}
+ 
+ \todo{
+\begin{itemize}
+\item How the traces perform.
+\end{itemize}
+}
+
+\clearpage
+\section{Heterogeneous vs Homogenous}
+ 
+\todo{
+\begin{itemize}
+\item Throughput vs Cost of Heterogeneous vs Homogenous cluster.
+\end{itemize}
+}

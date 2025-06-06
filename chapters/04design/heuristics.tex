@@ -52,7 +52,7 @@ c_{\mathrm{prefill}} = \arg\min_{c\in C} \widetilde{\delta}(c).
 \label{chap:decode-parallelism}
 
 We can compute the same best configuration for the decode phase, with small modifications to the set of $C$ configurations taking into account mixture-of-experts.
-Unlike prefill, \(dp\) (the data‐parallelism factor) is not a native parameter of the Shallowsim simulator.
+Unlike prefill, \(dp\) (the data-parallelism factor) is not a native parameter of the Shallowsim simulator.
 Instead, we pre-compute how many GPUs to pass to the simulator and then scale the resultant throughput by \(dp\).
 Let \(G\) be the total number of GPUs, \(tp\) tensor parallelism factor, and \(n\) the total number of routed experts in the model.
 We can form every pairing of valid factors using:
@@ -139,6 +139,8 @@ Configurations with zero throughput are due to the configuration exceeding the m
 %The graphs of \autoref{fig:04-decode-throughput-vs-sequence-length} also demonstrate the advantages of heterogeneity.
 
 % Add some explanations of the graph 
+ 
+% add some graphs of the delta approach, like how the best one is selected
 
 \subsection{Solver Resolution}
 \label{chap:resolution}
@@ -147,7 +149,7 @@ We can use the simulator to benchmark the prefill and decode throughput of an is
 While it is feasible to consider each sequence length  (\(s\in S\)) individually (in our optimisation problem), we can use a binning approach to reduce the search space of the scheduler.
 The width of the ranges effectively control the resolution of the solution generated, which can be dynamically adjusted depending on input parameters.
 
-We partition the sorted list of lengths \(S\) into equally‐sized intervals of width \(W\), called \textit{ranges}.
+We partition the sorted list of lengths \(S\) into equally-sized intervals of width \(W\), called \textit{ranges}.
 Rather than measure every \(s_i\), we sample a single representative length from each range at its midpoint.
 With a positive integer width \(W\), we compute the midpoint offset as \(\mathrm{mid} = \left\lfloor \tfrac{W}{2}\right\rfloor\).
 For each integer \(k\) such that \(0 \le k < \lfloor \lvert S\rvert / W\rfloor\), we let 
@@ -164,7 +166,7 @@ and record for range \(k\) the tuple \(\bigl(\mathrm{range\_mid}_k,\,p_k,\,\math
 \[
 \mathcal{R} = \bigl\{\,(\mathrm{range\_mid}_k,\,p_k,\,\mathrm{range\_start}_k,\,\mathrm{range\_end}_k)\mid 0 \le k < \lfloor \lvert S\rvert / W\rfloor \bigr\}.
 \]
-By sampling only at these midpoints and aggregating probabilities, we approximate the full set of sequence lengths in each range with a single point (\(\mathrm{range\_mid}_k\)), thereby greatly reducing the number of simulator calls while preserving workload‐weighted accuracy.
+By sampling only at these midpoints and aggregating probabilities, we approximate the full set of sequence lengths in each range with a single point (\(\mathrm{range\_mid}_k\)), thereby greatly reducing the number of simulator calls while preserving workload-weighted accuracy.
 
 % Display a graph of the binning (probably trace pdf sample but binned).
 
@@ -184,7 +186,7 @@ R_{\mathrm{prefill}}^{(i)}(s_r)\;\sum_{s\in S_r}p(s\mid w)
 \;=\;
 R_{\mathrm{prefill}}^{(i)}(s_r)\,p_r.
 \]
-By including \(x_i(r)\) into our per‐range throughput models, the expected prefill throughput under workload \(w\) becomes
+By including \(x_i(r)\) into our per-range throughput models, the expected prefill throughput under workload \(w\) becomes
 \[
 \mathbb{E}[R_{\mathrm{prefill}}\mid w]
 =\sum_{i\in I_{\mathrm{prefill}}}\sum_{r\in\mathcal{R}}

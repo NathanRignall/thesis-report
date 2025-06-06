@@ -2,14 +2,16 @@
 \section{Problem Formulation}
 \label{chap:problem-formulation}
 
-During \autoref{chap:constraint-optimisation} we formulated a non-linear bounded bin‐packing problem, by constraining the islands to a pre‐defined type and size.
+During \autoref{chap:constraint-optimisation} we formulated a non-linear bounded bin-packing problem, by constraining the islands to a pre-defined type and size.
 In a true scheduling problem we expect to be allocated an inventory of different GPU types, not formed islands.
-Let \(T\) be the set of GPU types an for each \(t\in T\), let \(n_t\) be the number of GPUs of type \(t\) allocated in the inventory.
-The full GPU inventory is then the vector \(\bigl(n_t\bigr)_{t\in T}\), with total number of GPUs in the system modelled as \(N = \sum_{t\in T} n_t\).
+Let \(T\) be the set of GPU types and for each \(t \in T\), let \(I_t\) be the number of GPUs of type \(t\) allocated in the inventory. The full GPU inventory is then the set \(\{\,I_t : t \in T\}\), with total number of GPUs in the system modelled as
+\(N \;=\; \sum_{t \in T} I_t\).
+%Let \(T\) be the set of GPU types an for each \(t\in T\), let \(n_t\) be the number of GPUs of type \(t\) allocated in the inventory.
+%The full GPU inventory is then the vector \(\bigl(n_t\bigr)_{t\in T}\), with total number of GPUs in the system modelled as \(N = \sum_{t\in T} n_t\).
 
 Similar to ThunderServe \autocite{jiangThunderServeHighperformanceCostefficient2025}, we can separate this scheduling problem as two separate, distinct stages.
-The first stage is the island layout generation, which we can treat as a search‐like optimisation problem in which we explore combinations of GPU island sizes and types.
-The second stage is the bounded bin‐packing step, a deterministic problem that assigns workload ranges to the pre‐computed islands to maximise throughput.
+The first stage is the island layout generation, which we can treat as a search-like optimisation problem in which we explore combinations of GPU island sizes and types.
+The second stage is the bounded bin-packing step, a deterministic problem that assigns workload ranges to the pre-computed islands to maximise throughput.
 By decoupling layout design from the packing phase, we can leverage specialised solvers for each subproblem and significantly reduce overall computational complexity. 
 
 We refer to the bounded bin packing problem as the \textit{inner loop}, and the outer optimisation process as the \textit{outer loop}, as illustrated in \autoref{fig:04-problem-formulation}.

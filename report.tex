@@ -21,6 +21,10 @@
 \usepackage{amsmath, amssymb} %Math
 \usepackage{subcaption} %Subcaption
 \usepackage{xcolor} % Colours
+\usepackage{booktabs}   % for \toprule, \midrule, \bottomrule, etc.
+\usepackage{multirow}   % only if you use \multirow{…}
+ \usepackage{array} 
+ \usepackage{tabularx}  % only if you want auto-wrapping or special column widths
 
 % diagram packages
 \usepackage{tikz}
@@ -122,7 +126,7 @@ Main chapters (excluding front-matter, references and appendix):
 \contentpages~pages
 (pp~\pageref{firstcontentpage}--\pageref{lastcontentpage})
 
-Main chapters word count: 6563
+Main chapters word count: 8576
 
 Methodology used to generate that word count:
 
@@ -132,9 +136,10 @@ Methodology used to generate that word count:
 \begin{verbatim}
 $ make wordcount
 gs -q -dSAFER -sDEVICE=txtwrite -o - \
-      -dFirstPage=9 -dLastPage=43 report-submission.pdf | \
+      -dFirstPage=9 -dLastPage=52 report-submission.pdf | \
    egrep '[A-Za-z]{3}' | wc -w
-6563
+8576
+    
 \end{verbatim}
 \end{quote}
 
