@@ -2,6 +2,13 @@
 
 \chapter{Related work}
 
+%In this chapter we will introduce the graph optimisation problem and describe the technical details of the design of the two reinforcement learning agents and their components. Furthermore, we will frame the optimisation problem in the RL domain by describing the system environment, the reward calcu- lation and the state-action space. Additionally, we describe the RL agents trained in the model-free and model-based domains as well as highlighting limitations in the application of reinforcement learning to this problem. Fi- nally, we discuss the relative benefits of each approach and the significant challenges that we must overcome to apply RL to this problem and establish the baselines to compare the model-free and model-based agents.
+
+In this chapter we introduce the current state-of-the-art for large language model (LLM) inference techniques.
+We describe how \textit{phase splitting} is currently being used to improve GPU cluster efficiency and reduce inference costs.
+Additionally, we describe how new advanced schedulers can be used to employ \textit{phase splitting} in a heterogeneous environment to further optimise systems.
+Finally, we outline gaps in current work relating to heterogenous \textit{phase splitting} in mixture-of-experts (MoE) environments.
+
 %This chapter covers relevant (and typically, recent) research
 %which you build upon (or improve upon). There are two complementary
 %goals for this chapter:
@@ -25,19 +32,82 @@
 %In the related work part, briefly talk about how existing works differ from yours. For instance, DistServe and Splitwise are used for efficient LLM inference and serving, but they fail to account for handling hardware heterogeneity and might obtain poor performance when deployed on a fully heterogeneous cluster with various GPU resources and network bandwidth. Additionally, HexGen and ThunderServe are responsible for LLM serving with heterogeneous clusters, but they fail to consider the unique characteristics of MoE architecture ……
 
 % Existing Schedulers
-\section{Case Studies}
+\section{Phase Splitting}
 
-\todo{
+Previous works from \textcite{zhongDistServeDisaggregatingPrefill2024} and \textcite{patelSplitwiseEfficientGenerative2024} introduced the concepts of \textit{phase splitting} LLM requests into prefill and decode.
+Phase splitting is a technique that separates the two distinct computational stages of LLM inference, as described in \autoref{chap:prefill-decode}, onto separate hardware resources.
+This tecnique targets improving the overall cost efficiency of LLM inference, by improving the utilisation of hardware.
 
-(Already complete. Notes in Obsidian, need to be transferred)
+Running both compute phases on the same physical hardware often leads to inconsistent end-to-end latencies  \autocite{patelSplitwiseEfficientGenerative2024}.
+This is because there is typically strong prefill-decode interference as a result of batching, where each phase waits for the other to complete (to compete for GPU resources) \autocite{zhongDistServeDisaggregatingPrefill2024}.
+To solve these latency inconsistencies, service providers have resulted to overrprovisioning resources to meet service level objectives (SLOs) \autocite{zhongDistServeDisaggregatingPrefill2024}.
+However, this results in sub-optimal use of hardware resources where available compute is often underutilised.
+This problem further worsens when the compute requirements for prefill and decode do not match each other, which is often the case in real-world scenarios.
+% common workload scenarios \autoref{inference-challanges}
 
-\subsection{DistServe}
-DistServe \autocite{zhongDistServeDisaggregatingPrefill2024} (Introduce Prefill/Decode).
+Also, executing both prefill and decode on the same hardware limits the possible deployment scenarios of models, as prefill and decode have to use the same parallelism configurations \autocite{zhongDistServeDisaggregatingPrefill2024}.
+Different parallelism techniques may be more optimal for prefill as compared to decode and visa versa.
+Hence, phase splitting provides important efficiency gains for LLM inference while demand from users is ever increasing.
 
 \subsection{Splitwise}
-Splitwise \autocite{patelSplitwiseEfficientGenerative2024} (Introduce Prefill/Decode).
+Splitwise \autocite{patelSplitwiseEfficientGenerative2024} is a system that first formally introduced and analysed the benefits of phase splitting.
+The authors performed extensive analysis of LLM inference, characterising the prefill/prompt phase as compute-intensive and the decode/token phase as more memory-intensive.
+
+Splitwise separates the two phases onto two separate machines
+Key insight
+
+% token phase is less computationally demanding, it can be run efficiently on older, less powerful, or power-capped GPUs
+
+%system uses a hierarchical scheduling system
+
+%optimized, asynchronous KV-cache transfer mechanism over high-speed interconnects to manage the separated workflow with minimal latency overhead
+
+\subsection{DistServe}
+DistServe \autocite{zhongDistServeDisaggregatingPrefill2024} is an LLM serving 
+
+Introduce an end-to-end distributed servicing system
+include a placment algorithm
+API frontend
+orchestration
+parrallel exeucition engine
+
+determines
+- the parallelism strategies for prefill and decode
+- the number of each instance type to deploy
+- how to place them onto the physical cluster
+
+% evaluation
+Homogenous
+Performed evaluation on 4 notes (32gpus) - 8 Nvidia SXM A100 connected with NVLINK
+
+Used datasets to test
+
+% Need to reference these
+Compared their system against vLLM DeepSpeed-MII
+
+More comprehensive analysis than Splitwise \autocite{patelSplitwiseEfficientGenerative2024}, 
+as they had more GPUs
+
+% What were their improvements
 
 
+% optimize for "goodput"
+% maximum request rate that can be served while staying within strict Service Level Objectives (SLOs).
+
+% independently co-optimize the resource allocation (i.e., the number of GPUs) and the specific parallelism strategy
+
+% (e.g., tensor parallelism degree) that is best suited for each phase's unique computational profile.
+
+% H
+\clearpage
+\section{Heterogenous Serving}
+
+Building upon the concepts introduced with \textit{phase splitting}, systems started to employ advanced scheduling methods to separate the prefill and decode phases onto specialised hardware.
+As the prefill and decode phase have different compute requirements it makes sense to target the workload deployment onto the most optimal hardware for the task.
+This is particularly relevant in heterogeneous environments such as the cloud, where a diverse mix of GPUs with varying costs, compute power, and memory bandwidths are available.
+
+ The schedulers introduced with Splitwise and DistServe both operate over a very small search space (due to the homogenous hardware).
+ Hence, \textcite{jiangThunderServeHighperformanceCostefficient2025} and \textcite{jiangHexGenGenerativeInference2024} work to develop more advanced scheduling algorithms, which optimise the time-to-solution and overall solution quality.
 
 \subsection{Thunderserve}
 Thunderserve \cite{jiangThunderServeHighperformanceCostefficient2025}
@@ -45,13 +115,14 @@ Thunderserve \cite{jiangThunderServeHighperformanceCostefficient2025}
 \subsection{HexGen}
 HexGen \autocite{jiangHexGenGenerativeInference2024}
 
+\section{Future Work}
 
-\subsection{Summary}
+\textbf{HexGen} and \textbf{ThunderServe} are responsible for LLM serving with heterogeneous clusters, but they fail to consider the unique characteristics of MoE architecture.
 
-HexGen and ThunderServe are responsible for LLM serving with heterogeneous clusters, but they fail to consider the unique characteristics of MoE architecture.
-
-\section{Future}
+% While these systems represent the state-of-the-art in scheduling for heterogeneous environments, their optimizations are designed around standard, dense transformer models.
+% 
+% The distinct computational patterns of Mixture-of-Experts (MoE) models, which involve dynamic token routing and loading different "expert" sub-networks, present a new set of scheduling challenges that are not addressed.
+% 
+% Future work could focus on adapting these advanced scheduling techniques to efficiently manage the sparse and dynamic expert activation inherent in MoE models.
 
 Possible Improvements, Lack of Moe
-
-}

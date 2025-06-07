@@ -15,17 +15,22 @@
 %rest of the dissertation.
 
 % Basic introduction to transformer Models
-\section{Transformers}
+\section{Transformer Models}
 
 Transformer models are a type of deep learning architecture specifically designed to handle sequential data such as natural language.
 Unlike recurrent neural networks (RNNs) which process sequences one step at a time, transformers can analyse entire sequences of data in parallel.
 This is achieved through self-attention, where each token in a sequence can weigh and incorporate information from all other tokens.
 Such attention is calculated by adding positional encodings to input embeddings which transforms each token into query, key and value vectors.
-Some model architectures also use multi-head attention, where multiple query, key and value vectors are calculated.
+Some model architectures also use multi-head attention, where multiple query, key and value vectors are calculated. 
+
+%Attention - \autocite{vaswaniAttentionAllYou2023}.
 
 The first Transformer models were originally designed for encoder-decoder tasks such as translation, where an input sequence is encoded and decoded to an output sequence. 
 %
-An encoder 
+%An encoder - \autocite{devlinBERTPretrainingDeep2019}
+% Decoder - OpenAI
+% Encoder - Decoder https://www.philschmid.de/fine-tune-flan-t5-deepspeed
+
 Processes input sequence
 Contextualized hidden representation
 No access to future tokens
@@ -65,6 +70,7 @@ Output
 %Diagram of Transformer architecture
 
 \subsection{Prefill and Decode}
+\label{chap:prefill-decode}
 We can separate the processing phases of LLM model inference steps into two distinct categories, with clear differences in hardware processing requirements.
 
 % Prefill
@@ -134,7 +140,7 @@ Key value caching is an optimisation used during inference steps for transformer
 %Focus on MoE, A2A etc.}
 
 % What different parallelism techniques are available
-\section{Parallelism}
+\section{Parallelism Strategies}
 
 \textbf{Data parallelism} refers to replicating a model across multiple processing units (GPUs / CPUs / TPUs), with each replica receiving a different slice of the input data.
 Hence, this technique is generally used to increase throughput of an overall system, especially in batched inference scenarios
@@ -156,8 +162,10 @@ Example}
 Operator-Level parallelism
 Stuff}
 
-\textbf{Expert Parallelism}
+\textbf{Pipeline Parallelism}
+\todo{Research}
 
+\textbf{Expert Parallelism}
 \todo{Mixture of experts 
 %
 Expert parallelism occurs when different experts are placed on different devices and are activated in parallel for}
@@ -167,8 +175,19 @@ Expert parallelism occurs when different experts are placed on different devices
 \todo{What are the different types of batching, how does this affect the overall performance on the system?
 Focus on latency, 99th percentile}
 
+% Why inference is hard
+\section{Inference Challenges}
+\label{chap:inference-challanges}
+
+\todo{
+\begin{itemize}
+\item Why inferences is hard.
+\item How workloads are modelled (code vs conversation).
+\end{itemize}
+}
+
 % Different technologies to build a scheduler 
-\section{Scheduler}
+\section{Scheduler Technologies}
 
 \todo{Context on why talking about schedulers...
 
@@ -239,13 +258,4 @@ Given problems are non-linear, it is harder to guarantee a globally optimal solu
 
 \textbf{Mixed Integer Programming (MIP)} is...
 
-}
-
-\section{Inference Challanges}
-
-\todo{
-\begin{itemize}
-\item Why inferences is hard.
-\item How workloads are modelled (code vs conversation).
-\end{itemize}
 }
