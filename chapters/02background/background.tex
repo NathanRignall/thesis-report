@@ -2,6 +2,10 @@
 
 \chapter{Background}
 
+Within this Chapter we introduce the concepts behind transformer models, their associated computing steps and the different phases of inference.
+%such that we can understanding optimisatoion
+We also introduce several technologies which can be used for building schedules in computer systems.
+
 %A more extensive coverage of what's required to understand your work.
 %In general you should assume the reader has a good undergraduate
 %degree in computer science, but is not necessarily an expert in the
@@ -20,54 +24,42 @@
 Transformer models are a type of deep learning architecture specifically designed to handle sequential data such as natural language.
 Unlike recurrent neural networks (RNNs) which process sequences one step at a time, transformers can analyse entire sequences of data in parallel.
 This is achieved through self-attention, where each token in a sequence can weigh and incorporate information from all other tokens.
-Such attention is calculated by adding positional encodings to input embeddings which transforms each token into query, key and value vectors.
-Some model architectures also use multi-head attention, where multiple query, key and value vectors are calculated. 
+Such attention is calculated by adding positional encodings to input embeddings which transforms each token into query, key and value (KV) vectors \autocite{vaswaniAttentionAllYou2023}.
 
-%Attention - \autocite{vaswaniAttentionAllYou2023}.
+%Some model architectures also use multi-head attention, where multiple query, key and value vectors are calculated. 
 
-The first Transformer models were originally designed for encoder-decoder tasks such as translation, where an input sequence is encoded and decoded to an output sequence. 
-%
-%An encoder - \autocite{devlinBERTPretrainingDeep2019}
-% Decoder - OpenAI
-% Encoder - Decoder https://www.philschmid.de/fine-tune-flan-t5-deepspeed
+The first transformer models were designed for encoder-decoder tasks such as translation, where an input sequence is encoded and decoded to an output sequence \autocite{lewisBARTDenoisingSequencetoSequence2019}.
+The encoder processes the entire input sequence and produces contextualised hidden representations of the text.
+Subsequently, the decoder generates output tokens one by one, using masked self-attention to prevent access to future tokens during generation \autocite{vaswaniAttentionAllYou2023}.
+Encoder-only models are typically used for classification and sentence embeddings \autocite{devlinBERTPretrainingDeep2019}, whereas decoder-only are often used for autoregressive generation (chatbots, coding assistants) \autocite{radfordImprovingLanguageUnderstanding}.
 
-Processes input sequence
-Contextualized hidden representation
-No access to future tokens
-%
-Decoder
-Generates output tokens one-by-one
-Masked self-attation to prevent seeing future tokens
-%
-Encoder-only models are typically used for classification and sentence embeddings.  
-%
-Decoder-only 
-Used for autoregressive generation (language modelling, chatbots, coding assistants
-%
 Transformers form the basis of modern natural language processing due to their scalability, parallelisation benefits, and excellent performance on long-range dependencies.
-%
-What is an LLM?
+An LLM, or Large Language Model, is a type of transformer model that has been trained on a massive amount of text data.
+Their ``large'' size refers to the vast number of parameters they contain, which is key factor in their ability to capture complex patterns in natural language.
 
 \subsection{Computation Steps}
-There are several compute steps involved in a Transformer model's forward pass, during inference tasks.
-The process begins with Input Embedding and Positional Encoding where each token in the input sequence is converted into a vector, using a learned embedding matrix.
-Next, the model computes the Query (Q), Key (K) and Value (V) vectors for each token, this is calculated by projecting the input embeddings through learned linear transformations.
-%Using the Q, K, and V values the model performs Scaled Dot-Product Attention 
+There are several computation steps involved in a Transformer model's forward pass during inference.
+The process begins with input embeddings and positional encodings, where each token in the input sequence is converted into a dense vector using a learned embedding matrix.
+Positional encodings are then added to incorporate information about the position of each token in the sequence.
+Next, the model computes the Query (Q), Key (K), and Value (V) vectors for each token by projecting the input embeddings through learned linear transformations.
+Using the Q, K, and V vectors, the model performs scaled dot-product attention to compute attention scores and weigh the significance of other tokens in the sequence relative to each token.
 
-Models can also use Multi-Head Attention
-%
-Instead of computing a single attention operation, the model splits the Q, K, and V matrices into multiple ``head'', concatenates the outputs 
-%
-The Add and Normalisation steps follow attention
--	The original input is added to the output and normalised
-%
-Feed-Forward Network
-%
-Stacked Layers
-%
-Output
+The output of the attention mechanism is passed through a residual connection and a layer normalisation step.
+This is followed by a position-wise feed-forward network, which consists of two linear transformations with a ReLU activation (or GELU in some models) in between, applied independently to each position.
+In deep Transformer models, these components (attention, residual connection, normalisation, and feed-forward layers) are stacked multiple times.
+The output of one layer serves as the input to the next.
+Finally, the output of the last Transformer layer is passed through a linear projection layer to produce the final output, depending on the task.
 
-%Diagram of Transformer architecture
+%\subsection{Computation Steps}
+%There are several compute steps involved in a Transformer model's forward pass, during inference tasks.
+%The process begins with processing input embeddings and positional encodings, where each token in the input sequence is converted into a vector, using a learned embedding matrix.
+%Next, the model computes the Query (Q), Key (K) and Value (V) vectors for each token, this is calculated by projecting the input embeddings through learned linear transformations.
+%Using the Q, K, and V values the model performs Scaled Dot-Product Attention to weigh the significance of other tokens in the sequence relative to the current token.
+%
+%The add and normalisation steps follow attention, where the output of the attention mechanism is added back to the original input embedding, and the result is passed through a layer normalisation step. 
+%This is followed by a position-wise feed-forward network, which consists of two linear transformations with a ReLU activation in between, applied independently to each position.
+%For deep models, these layers are stacked on top of each other, with the output of one layer serving as the input to the next
+%Finally, the output of the last transformer layer is typically passed through a final linear layer to project it into the desired output format.
 
 \subsection{Prefill and Decode}
 \label{chap:prefill-decode}
@@ -75,23 +67,25 @@ We can separate the processing phases of LLM model inference steps into two dist
 
 % Prefill
 The prefill stage processes the input tokens to compute the transformer model's intermediate states.
-This includes calculating the positional embeddings and populating the KV cache, which are subsequently used to generate the first new token.
-
-This specific phase is easily parallelized because at every stage of computation (per token) the full input sequence is known.
-Hence, this is viewed as a matrix-matrix operation which can easily saturate a GPUs available compute.
+This includes calculating the positional embeddings and populating the KV cache, which are subsequently used to generate the first new token \autocite{shengFlexGenHighThroughputGenerative2023}.
+This specific phase is easily parallelised because at every stage of computation (per token) the full input sequence is known.
+Hence, this is viewed as a matrix-matrix operation which can easily saturate a GPUs available compute \autocite{MasteringLLMTechniques2023}.
 \textit{In reference to a transformer's computation steps, all stages are performed for every token in the sequence but can be heavily parallelised.}
 
 % Decode
-The decode phase generates each output token one at a time, this is because each token computation is dependent on the previous token.
+The decode phase generates each output token one at a time, this is because each token computation is dependent on the previous token \autocite{shengFlexGenHighThroughputGenerative2023}.
 Hence, each token must be calculated sequentially.
 The speed at which the decode phase can execute is heavily dependent on the speed at which weights, keys, values and activations can be loaded into the correct areas of GPU memory.
-Hence this phase usually saturates the memory bandwidth of a GPU before saturating the compute performance.
+This phase usually saturates the memory bandwidth of a GPU before saturating the compute performance \autocite{patelSplitwiseEfficientGenerative2024}.
 \textit{In reference to a transformer's computation steps, all stages are performed, but for only the new token generated - this is due key-value caching.}
 
 %Diagram of Prefill vs Decode
 
 \subsection{Key Value caching}
-Key value caching is an optimisation used during inference steps for transformer-based decoder-only models such as GPT. This technique avoids recomputing the tensors for each input token for every decode token generated. Instead weights and key values are cached in GPU memory, to be used in the next iteration. At each decoding step the Q value of the new token is computed, reusing cached K and V values from earlier tokens in the sequence. This technique comes at the cost of using more GPU memory, reducing the maximum model size that theoretically could be loaded.
+Key value caching is an optimisation used during inference steps for transformer-based decoder-only models such as GPT \autocite{radfordImprovingLanguageUnderstanding}.
+This technique avoids recomputing the tensors for each input token for every decode token generated. Instead weights and key values are cached in GPU memory, to be used in the next iteration.
+At each decoding step the Q value of the new token is computed, reusing cached K and V values from earlier tokens in the sequence \autocite{popeEfficientlyScalingTransformer2022}.
+This technique comes at the cost of using more GPU memory, reducing the maximum model size that theoretically could be loaded.
 
 %Diagram of Key Value cache
 
@@ -187,6 +181,7 @@ Focus on latency, 99th percentile}
 }
 
 % Different technologies to build a scheduler 
+\clearpage
 \section{Scheduler Technologies}
 
 \todo{Context on why talking about schedulers...

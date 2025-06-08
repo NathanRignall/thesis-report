@@ -1,6 +1,6 @@
 \graphicspath{{chapters/03related/graphics}}
 
-\chapter{Related work}
+\chapter{Related Work}
 
 %In this chapter we will introduce the graph optimisation problem and describe the technical details of the design of the two reinforcement learning agents and their components. Furthermore, we will frame the optimisation problem in the RL domain by describing the system environment, the reward calcu- lation and the state-action space. Additionally, we describe the RL agents trained in the model-free and model-based domains as well as highlighting limitations in the application of reinforcement learning to this problem. Fi- nally, we discuss the relative benefits of each approach and the significant challenges that we must overcome to apply RL to this problem and establish the baselines to compare the model-free and model-based agents.
 
@@ -36,7 +36,7 @@ Finally, we outline gaps in current work relating to heterogenous \textit{phase 
 
 Previous works from \textcite{zhongDistServeDisaggregatingPrefill2024} and \textcite{patelSplitwiseEfficientGenerative2024} introduced the concepts of \textit{phase splitting} LLM requests into prefill and decode.
 Phase splitting is a technique that separates the two distinct computational stages of LLM inference, as described in \autoref{chap:prefill-decode}, onto separate hardware resources.
-This tecnique targets improving the overall cost efficiency of LLM inference, by improving the utilisation of hardware.
+This technique targets improving the overall cost efficiency of LLM inference, by improving the utilisation of hardware.
 
 Running both compute phases on the same physical hardware often leads to inconsistent end-to-end latencies  \autocite{patelSplitwiseEfficientGenerative2024}.
 This is because there is typically strong prefill-decode interference as a result of batching, where each phase waits for the other to complete (to compete for GPU resources) \autocite{zhongDistServeDisaggregatingPrefill2024}.
@@ -49,57 +49,74 @@ Also, executing both prefill and decode on the same hardware limits the possible
 Different parallelism techniques may be more optimal for prefill as compared to decode and visa versa.
 Hence, phase splitting provides important efficiency gains for LLM inference while demand from users is ever increasing.
 
-\subsection{Splitwise}
-Splitwise \autocite{patelSplitwiseEfficientGenerative2024} is a system that first formally introduced and analysed the benefits of phase splitting.
-The authors performed extensive analysis of LLM inference, characterising the prefill/prompt phase as compute-intensive and the decode/token phase as more memory-intensive.
+% KV-Cache has to be transferred. explain how/why/slow
 
-Splitwise separates the two phases onto two separate machines
-Key insight
+\subsection{Splitwise}
+Splitwise \autocite{patelSplitwiseEfficientGenerative2024} is one of the first systems that formally introduced and analysed the benefits of phase splitting.
+The authors performed extensive analysis of LLM inference, characterising the prefill/prompt phase as compute-intensive and the decode/token phase as memory-intensive.
+
+Splitwise divides the two inference phases onto separate machines using a hierarchical scheduling system. 
+A Cluster-Level Scheduler (CLS) is responsible for machine pool management and for routing incoming requests to a prefill and decode machines.
+Pools are crafted using the analysed workload distribution (proportion of prefill vs decode) from public Azure LLM traces \autocite{patelSplitwiseEfficientGenerative2024}.
+%The system maintains separate pools of machines designated for either prefill or decode processing.
+%It also uses a ``mixed pool'' of machines that can handle both tasks to manage load fluctuations.
+A Machine-Level Scheduler (MLS) then runs on each individual machine to manage its local request queue, making dynamic batching decisions.
+
+During the initial prefill phase, the model processes the input prompt and populates the (KV) cache.
+This cache is required for the decode phase and because Splitwise runs the prefill and decode phases on different machines, the KV-cache generated on the prefill machine must be transferred over the network to the decode machine.
+To minimise latency, Splitwise overlaps the KV-cache transfer with the prefill computation.
+
+%As each layer of the LLM is processed on the prompt machine, the corresponding KV-cache data is asynchronously sent to the token machine. This "per-layer" transfer significantly reduces the overhead, making the transfer's impact on latency almost unnoticeable to the user
 
 % token phase is less computationally demanding, it can be run efficiently on older, less powerful, or power-capped GPUs
 
-%system uses a hierarchical scheduling system
-
-%optimized, asynchronous KV-cache transfer mechanism over high-speed interconnects to manage the separated workflow with minimal latency overhead
-
-\subsection{DistServe}
-DistServe \autocite{zhongDistServeDisaggregatingPrefill2024} is an LLM serving 
-
-Introduce an end-to-end distributed servicing system
-include a placment algorithm
-API frontend
-orchestration
-parrallel exeucition engine
-
-determines
-- the parallelism strategies for prefill and decode
-- the number of each instance type to deploy
-- how to place them onto the physical cluster
+The authors perform evaluation of Splitwise on NVIDIA A100s and H100s virtual machines on Microsoft Azure.
+The evaluation demonstrates phase splitting brings substantial improvements in throughput, cost, and power efficiency without compromising on latency SLOs.
+However, this work relies on high-end datacenter interconnects for its primary KV-cache transfer to function effectively, which may not always be available.
 
 % evaluation
-Homogenous
-Performed evaluation on 4 notes (32gpus) - 8 Nvidia SXM A100 connected with NVLINK
+% homogenous 
+% Heterogeneous Clusters mix of NVIDIA A100s and H100s
+% Power capped clusters
 
-Used datasets to test
+% critiques
+% A critique of the work is its reliance on high-end datacenter interconnects for its primary KV-cache transfer optimization to function effectively, which may not be universally available. Moreover, its hardware evaluation is limited to a two-machine prototype, with larger-scale results depending on a simulator whose fidelity at extreme scales is not fully validated in real-world deployments. The proposed centralized cluster-level scheduler is also acknowledged as a potential bottleneck for very large clusters
+
+
+\subsection{DistServe}
+Similar to Splitwise, DistServe \autocite{zhongDistServeDisaggregatingPrefill2024} assigns the prefill and decoding phases to separate, dedicated machines, eliminating interference and allowing for independent optimisation.
+The authors optimise the system for "goodput", the maximum request rate that can be served whilst still adhering to defined SLOs.
+
+\textcite{zhongDistServeDisaggregatingPrefill2024} introduce an end-to-end distributed servicing system which includes a placement algorithm, orchestration system and parallel execution engine.
+The scheduling algorithm maximises per-GPU goodput by first optimising the configuration for a single model replica and then scaling this configuration to meet the required traffic rate.
+During online operation, DistServe uses a simple First-Come-First-Served (FCFS) scheduling policy, where incoming requests are sent to the prefill instance with the shortest queue.
+Subsequent decode operations are sent to the least-loaded decoding instance.
+
+%determines
+%- the parallelism strategies for prefill and decode
+%- the number of each instance type to deploy
+%- how to place them onto the physical cluster
+
+% evaluation
+The paper evaluate the DistServe system in a homogenous environment, with 4 nodes containing 8 NVIDIA SXM A100 connected with NVLINK.
+Using public datasets \autocite{ShareGPT} \autocite{chenEvaluatingLargeLanguage2021} \autocite{baiLongBenchBilingualMultitask2024}, the authors compare their system against vLLM \autocite{kwonEfficientMemoryManagement2023} and DeepSpeed \autocite{DeepspeedaiDeepSpeed2025} inference systems.
+The authors claim DistServe can serve up to 7.4x more requests or handle 12.6x tighter SLOs compared to state-of-the-art systems.
 
 % Need to reference these
-Compared their system against vLLM DeepSpeed-MII
 
-More comprehensive analysis than Splitwise \autocite{patelSplitwiseEfficientGenerative2024}, 
-as they had more GPUs
+%More comprehensive analysis than Splitwise \autocite{patelSplitwiseEfficientGenerative2024}, 
+%as they had more GPUs
 
-% What were their improvements
+% What were their improvements, why is this a good paper?
 
+Like Splitewise, DistServe assumes the availability of high-quality, low-latency datacenter interconnects like NVLink for (KV) cache transfer.
+Hence, this system is less applicable to environments with constrained networking hardware.
+However, the authors do consider how parallelism strategies can be optimised for the prefill and decode phase independently, unlike Splitewise.
 
-% optimize for "goodput"
-% maximum request rate that can be served while staying within strict Service Level Objectives (SLOs).
+% critiques
+% A key criticism is that DistServe's design and performance benefits are predicated on the availability of high-quality, low-latency datacenter interconnects like NVLink, making it less applicable to environments with constrained networking. Furthermore, its evaluation is focused on standard multi-head attention (MHA) models ; while the paper suggests it would perform even better on models with more efficient attention mechanisms, its effectiveness is not explicitly demonstrated across a wider range of emerging model architectures
 
-% independently co-optimize the resource allocation (i.e., the number of GPUs) and the specific parallelism strategy
-
-% (e.g., tensor parallelism degree) that is best suited for each phase's unique computational profile.
-
-% H
-\clearpage
+% Heterogenous
 \section{Heterogenous Serving}
 
 Building upon the concepts introduced with \textit{phase splitting}, systems started to employ advanced scheduling methods to separate the prefill and decode phases onto specialised hardware.
@@ -108,21 +125,63 @@ This is particularly relevant in heterogeneous environments such as the cloud, w
 
  The schedulers introduced with Splitwise and DistServe both operate over a very small search space (due to the homogenous hardware).
  Hence, \textcite{jiangThunderServeHighperformanceCostefficient2025} and \textcite{jiangHexGenGenerativeInference2024} work to develop more advanced scheduling algorithms, which optimise the time-to-solution and overall solution quality.
-
-\subsection{Thunderserve}
-Thunderserve \cite{jiangThunderServeHighperformanceCostefficient2025}
+The core challenge with heterogenous serving is not with the phase splitting itself, but with the scheduling algorithm used to organise the cluster
 
 \subsection{HexGen}
-HexGen \autocite{jiangHexGenGenerativeInference2024}
+HexGen \autocite{jiangHexGenGenerativeInference2024} is a distributed inference engine designed to serve LLMs over heterogeneous environments, aiming to mitigate the substantial costs associated with traditional centralised deployments.
+The authors use a two-phase scheduling algorithm that solves the NP-hard scheduling problem.
 
-\section{Future Work}
+The global optimisation processes uses a genetic algorithm to find the optimal partition of the global set of GPUs into multiple independent inference pipeline groups.
+This evolutionary algorithm gradually improves the solution by iteratively applying mutation operations such as Merge, Split, and Swap to the GPU partitions, which allows the search to explore different configurations and converge on a high-quality layout.
+The inner pipeline optimisation process uses dynamic programming to determine the optimal layout of pipeline stages.
 
-\textbf{HexGen} and \textbf{ThunderServe} are responsible for LLM serving with heterogeneous clusters, but they fail to consider the unique characteristics of MoE architecture.
+%iteratively calculates the minimum cost assignment of layers, a process made computationally feasible by a heuristic that constrains tensor parallelism to GPUs of the same type
 
+A unique contribution of HexGen is its support for asymmetric parallelism, meaning each pipeline stage can be assigned a different tensor model parallel degree and number of layers.
+This flexibility is enables mapping of LLMs onto diverse GPUs with varying compute capabilities.
+
+%While the system's cost model accounts for communication overhead between pipeline stages, it 
+
+does not introduce a specific novel technique for KV cache management. 
+
+% kv cache
+
+The authors claim that for the same budget, HexGen can achieve up to 2.3x lower latency deadlines or tolerate up to 4x more requests than a homogeneous baseline.
+
+
+\subsection{Thunderserve}
+\textcite{jiangThunderServeHighperformanceCostefficient2025} build Thunderserve, another LLM serving system designed specifically for heterogeneous hardware. 
+The authors use a novel two-level hierarchical scheduling algorithm to optimise the deployment plan across varied hardware and network conditions.
+
+The global/upper level uses a search algorithm to determine the optimal group construction (how to partition GPUs) and phase designation (assigning groups to prefill or decode).
+Whereas the lower level, given the group assignments, deduces the optimal parallel configuration and orchestrates request routing by framing it as a solvable transportation problem.
+The authors also introduce lightweight re-scheduling mechanisms, designed to adapt to fluctuating online conditions like workload shifts or node failures without service restarts.
+The system adapts to changing workloads by only adjusting phase designation and orchestration, to minimise user disruption from rescheduling.
+
+% KV cache compression technique to reduce data transfer costs over low-bandwidth networks and a 
+
+Good cost efficiency
+
+% Problems
+The KV cache compression is an lossy process that could negatively affect performance on tasks requiring perfect fidelity (additional analysis required)
+
+Also the search algorithm 
+ Search heuristic to solve an NP-hard problem; while effective, it is not guaranteed to find the absolute global optimum,
+ 
+\section{Summary and Future Work}
+
+The initial works of DistServe and Splitwise established the initial concepts of phase splitting to improve LLM inference efficiency in primarily homogeneous settings. 
+Building upon this, HexGen and ThunderServe developed more advanced schedulers to apply these principles to complex, heterogeneous cloud environments.
+HexGen introduced asymmetric parallelism for greater flexibility, while ThunderServe focused on holistic deployment optimisation and dynamic adaptation for the cloud.
+
+A shared limitation across these systems is that they primarily focus on standard transformer architectures.
+They do not explicitly consider or optimise for the unique characteristics of Mixture-of-Experts (MoE) models, which have different architectural and computational patterns.
+We exploit this gap to develop a heterogenous scheduler for MoE, targeted towards the sate-of-the-art DeepSeek V3 architecture \autocite{deepseek-aiDeepSeekV3TechnicalReport2025}.
+
+%Whilst also using different scehduling techniques
+%To more precisely optimise the system
+
+%\textbf{HexGen} and \textbf{ThunderServe} are responsible for LLM serving with heterogeneous clusters, but they fail to consider the unique characteristics of MoE architecture.
 % While these systems represent the state-of-the-art in scheduling for heterogeneous environments, their optimizations are designed around standard, dense transformer models.
-% 
 % The distinct computational patterns of Mixture-of-Experts (MoE) models, which involve dynamic token routing and loading different "expert" sub-networks, present a new set of scheduling challenges that are not addressed.
-% 
 % Future work could focus on adapting these advanced scheduling techniques to efficiently manage the sparse and dynamic expert activation inherent in MoE models.
-
-Possible Improvements, Lack of Moe
