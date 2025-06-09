@@ -1,45 +1,5 @@
 % STUFF
-\clearpage
 \section{Outer Solver}
-
-%We consider a resource allocation problem where the goal is to optimise a black-box objective function \( f: \mathcal{X} \to \mathbb{R} \) using Bayesian Optimisation.
-%The function \( f \) is expensive to evaluate and only accessible via noisy observations. 
-%The domain \( \mathcal{X} \subseteq \mathbb{R}^d \) represents a constrained space defined by hardware inventory limits.
-%Our objective is to find an optimal configuration of GPU allocations that maximizes the function \( f \).
-
-%
-%\subsubsection*{Bayesian Optimization Formulation}
-%
-%Bayesian Optimization models the objective function \( f \) using a probabilistic surrogate model \( \hat{f}(x) \), typically a Gaussian Process (GP):
-%
-%\[
-%\hat{f}(x) \sim \mathcal{GP}(\mu(x), k(x, x'))
-%\]
-%
-%An acquisition function \( \alpha(x; \hat{f}) \) is used to determine the next point to evaluate:
-%
-%\[
-%x_{t+1} = \arg \max_{x \in \mathcal{X}} \alpha(x; \hat{f}_t)
-%\]
-%
-%This optimization is subject to a set of resource constraints, which are defined below.
-
-%We refer to the bounded bin packing problem as the \textit{inner loop}, and the outer optimisation process as the \textit{outer loop}, as illustrated in \autoref{fig:04-problem-formulation}.
-%The \textit{outer loop} is responsible for generating promising island layouts, which are then passed to the \textit{inner loop} for resource packing.
-%The resulting throughput is returned to the \textit{outer loop}, allowing the optimisation process to evaluate and refine its search for effective configurations.
-% This iterative cycle can be repeated multiple times to generate progressively generate an optimum solution.
- 
-% During \autoref{chap:constraint-optimisation} we formulated a non-linear bounded bin-packing problem, by constraining the islands to a pre-defined type and size.
-%In a true scheduling problem we expect to be allocated an inventory of different GPU types, not formed islands.
-%Let \(T\) be the set of GPU types an for each \(t\in T\), let \(n_t\) be the number of GPUs of type \(t\) allocated in the inventory.
-%The full GPU inventory is then the vector \(\bigl(n_t\bigr)_{t\in T}\), with total number of GPUs in the system modelled as \(N = \sum_{t\in T} n_t\).
-
-%The \textit{inner loop} receives an island layout proposal from the \textit{outer loop}, this layout is specified as a finite index set \(\mathcal{I} \;=\; \{\,i = 1,\dots,|\mathcal{I}|\}\), where each island \(i\) is represented by a pair \(\bigl(t_{i},s_{i}\bigr)\).  
-%Here, \(t_{i}\in T\) denotes the GPU type assigned to island \(i\), and \(s_{i}\in \mathbb{Z}_{\ge 0}\) indicates the number of GPUs of type \(t_{i}\) allocated to that island.
-%The \textit{outer loop} guarantees that these allocations respect the total-inventory constraints.
-
-%Given the predefined island layout \(\bigl\{(t_{j},s_{j})\bigr\}_{j=1}^{|\mathcal{I}|}\), the inner loop's only task is to assign workloads of different prefill and decode lengths.
-%No further modification of \(t_{i}\) or \(s_{i}\) takes place at this stage, as the inner loop focuses entirely on determining the optimal bin-packing configuration.
 
 The \textit{outer loop} receives an input inventory, containing a list of GPU types (\(t\in T\)) and quantities (\(n_t\)), represented with the set \(\{\,I_t : t \in T\}\).
 Given the inventory, the \textit{outer loop's} job is to propose new island layouts (\(\mathcal{I}\)), which can be subsequently evaluated by the \textit{inner loop}.
@@ -56,10 +16,11 @@ Instead we use a refined Bayesian Optimisation search method with two different 
 \end{figure}
 
 We select Bayesian Optimisation specifically due to its ability to efficiently explore high-dimensional, expensive‐to‐evaluate spaces with only a few hundred evaluations, rather than the exponential cost of a full grid search.
-By maintaining a surrogate model of the island‐layout performance (Gaussian process over layouts), Bayesian Optimisation balances exploration (sampling layouts in poorly understood regions) with exploitation (refining around the current best layouts).
+By maintaining a surrogate model of the island‐layout performance (gaussian process over layouts), Bayesian Optimisation balances exploration (sampling layouts in poorly understood regions) with exploitation (refining around the current best layouts).
 
 Unlike reinforcement learning, which often requires thousands of interactions to learn a policy, BO is designed for “one‐shot” black‐box optimisation.
 With the correct parameters it can deliver near‐optimal solutions with far fewer simulator calls, minimal hyper-parameter tuning, and strong convergence.
+This applies to our-use case where the \textit{inner loop} and constraint solver is effectively black-box.
 
 % First BO Method
 \subsection{Direct Island Generation}
@@ -94,45 +55,47 @@ For each GPU type \( t \in T \), we enforce that the total number of GPUs alloca
 
 \subsubsection*{Implementation}
 
-\todo{
-\begin{itemize}
-\item Ax Implementation.
-\item Why SAASBO may be required (high dimensionality)
-\item Why this approach is challenging.
-\end{itemize}
-}
+The implementation of this approach uses the \texttt{Ax} \autocite{FacebookAx2025} library with \texttt{BoTorch} \autocite{PytorchBotorch2025} to perform the Bayesian Optimisation.
+The search space is defined programmatically such that for each GPU type, a fixed number of \(K\) slots are created.
+Each slot is a \texttt{RangeParameter} varying from 0 to the total inventory capacity for that GPU type.
+A \texttt{SumConstraint} is then applied for each GPU type, to ensure that the total number of allocated GPUs across all its slots does not exceed the available inventory.
 
-% Though BO has been recognized as a powerful approaches for a diversity of problem domains, it is also known that traditional BO is inherently vulnerable to the ”curse-of- dimensionality” [6] when the search space has a large number of dimensions. wl-446
+The optimisation process begins with a warm-start phase, where a small number of valid but randomly generated layouts are evaluated.
+Following this initialisation, the main optimisation loop begins.
 
-%These constraints define a feasible subspace \( \mathcal{X} \subseteq \mathbb{R}^d \), over which the Bayesian Optimization is performed.
+This problem is high-dimensional (\( |T| \times K \)), which can pose a challenge for standard Bayesian optimisation.
+To address this, we use SAASBO (Sparse Axis-Aligned Subspace Bayesian Optimization) \autocite{erikssonHighDimensionalBayesianOptimization2021}, specifically the \texttt{SaasFullyBayesianSingleTaskGP} model from \texttt{BoTorch}.
+SAASBO is effective in high-dimensional spaces because it identifies and focuses on a low-dimensional active subspace of the most influential parameters, thus improving sample efficiency.
 
-%\subsubsection*{Search Space Definition}
-%
-%In implementation (e.g., using Ax or BoTorch), the search space \( \mathcal{X} \) is constructed by defining:
-%\begin{itemize}
-%    \item A list of bounded integer parameters \( \{x_{g,k}\} \)
-%    \item A set of linear \texttt{SumConstraint} objects that enforce the inventory limits
-%\end{itemize}
-%
-%These constraints are handled internally by the BO engine when sampling candidate configurations during optimization.
+In each iteration of the loop, the SAASBO surrogate model is fitted to all the data collected so far.
+The model then generates a new batch of candidate layouts, which are subsequently evaluated by the \textit{inner loop} solver.
+The results are used to update the model's understanding of the search space, and the process repeats for a fixed number of iterations.
 
+We configure the solver to minimise the \texttt{rho\_max} value, which is calculated as the inverse of the system's overall throughout.
+Where throughput (as defined in \autoref{chap:throughput-modelling}) is the minimum value of \(R_{\text{prefill}}\) and \(R_{\text{decode}}\).
+The Bayesian Optimisation process is effectively maximising the system's overall performance.
+
+However, with this direct generation approach, finding a good solution can be challenging.
+This is because even with SAASBO the search space can be vast.
+Additionally, in some scenarios many parameters for the slots may optimally be zero (singular large island), creating a sparse problem that can be difficult for the optimiser to navigate.
+Finally, keeping the total number of GPUs used across the slots below the total inventory count can also be difficult.
+Without creating a complex custom acquisition function, \texttt{BoTorch} has to reject proposed solutions outside the constraints.
+This causes many proposed solutions to be pruned, which is very inefficient.
+To combat these challenges, we propose the \textit{divider} island generation approach.
 
 % Second BO method
-\clearpage
 \subsection{Divider Island Generation}
 \label{chap:island-divide}
 
 The \textit{divider} island generation method uses a more abstract representation that substantially reduces the dimensionality of the BO problem.
-Explicit allocation at the slot level requires one parameter per slot per GPU type, resulting in a parameter space of size \( |G| \times K \).
+Explicit allocation at the slot level requires one parameter per slot per GPU type, resulting in a parameter space of size \( |T| \times K \).
 This approach becomes quickly computationally expensive due to the high number of search parameters and the need for constraints to ensure valid configurations.
 
-To address this, the divider-based approach reduces the search space to just two parameters per GPU type: the total number of islands and a scalar that controls the balance of GPU allocation across those islands.
- This formulation results in a significantly smaller parameter space of size \( |G| \times 2 \), enabling more efficient optimisation and faster convergence.
+To address this, the divider-based approach reduces the search space to just two parameters per GPU type: the total number of islands and a vector value that controls the balance of GPU allocation across those islands.
+ This formulation results in a significantly smaller parameter space of size \( |T| \times 2 \), enabling more efficient optimisation and faster convergence.
 
-An advantage of this method is that it avoids the need for explicit resource constraints, which are otherwise necessary to enforce inventory limits and prevent invalid configurations.
+An advantage of this method is that it avoids the need for explicit resource constraints, which are otherwise necessary to enforce inventory limits and prevent invalid configurations being proposed.
 By shifting from low-level allocation to higher-level distribution strategies, divider island generation maintains control over performance-influencing characteristics while offering a more scalable and interpretable optimisation process.
-
-%The primary goal of the island divider procedure is to programmatically divide a given total number of GPUs of a specific type into a list of smaller, integer-sized islands.
 
 \subsubsection{Input Variables}
 Let \(G_{\text{total}}\) denote the total number of GPUs available for that type, and let \(N_{\text{target}}\) represent the desired number of islands to create.
@@ -213,16 +176,18 @@ The function returns this list of $N_{\text{actual}}$ island sizes as the result
     \item \( I_t \): the total available inventory of GPU type \( t \)
 \end{itemize}
 
-%Here, \( n_g \) is an integer representing how many islands to distribute GPUs across, and \( s_g \in [0, 1] \) controls how evenly the GPUs are distributed across those islands. For example, \( s_g = 0 \) could represent perfectly balanced islands (equal GPU count per island), while \( s_g = 1 \) could represent maximal skew (e.g., one island with most of the GPUs, others with minimal or none).
-
 These two parameters (\( n_t \) and \( s_t \)) define the entire resource distribution strategy, allowing the Bayesian Optimisation process to search over high-level allocation patterns while implicitly satisfying inventory constraints by design.
 
 \clearpage
 \subsubsection*{Implementation}
 
-\todo{
-\begin{itemize}
-\item Ax Implementation.
-\item SAASBO not required.
-\end{itemize}
-}
+Like the direct approach, this method is implemented using the \texttt{Ax} \autocite{FacebookAx2025} Python library with \texttt{BoTorch} \autocite{PytorchBotorch2025}.
+However, the search space is constructed in a significantly simpler way.
+For each GPU type, only two parameters are created:  \( n_t \) as an integer \texttt{RangeParameter}, and \( s_t \) as a float \texttt{RangeParameter}.
+
+During evaluation, these high-level parameters are passed to the previously described \texttt{divider} function, which generates a final list of integer island sizes.
+This resultant layout is then passed to the same \texttt{inner loop} solver as before to calculate the objective, \texttt{rho\_max}.
+
+A key advantage of this method's low-dimensional search space (two parameters per GPU type) is that a standard Gaussian Process (GP) model is sufficient for optimisation.
+Hence, this implementation uses the BoTorch \texttt{SingleTaskGP} as the surrogate model.
+We can expect this method to be significantly faster to execute, as compared to the \textit{direct} approach.

@@ -6,22 +6,15 @@
 %of evaluation, and it's often useful to separate this out into its own
 %chapter.
 
-\todo{
-\begin{itemize}
-\item Intro to Chapter.
-\item Key - compare heterogenous vs homogenous (show why heterogeneous is better)
-\item Overall system performance (key graphs only).
-\end{itemize}
-}
+The purpose of this chapter is to analyse the performance of the proposed LLM scheduling algorithm.
+We specifically investigate, for a given GPU budget, whether a heterogenous cluster is faster (higher throughput) than a homogenous cluster.
+The goal is to demonstrate that heterogenous clusters are still more cost efficient than homogenous ones in a MoE environment.
 
-Talk about Experimental Setup!!!!
+We also investigate the performance of the two different scheduling levels separately, to try understand if both are performing effectively.
+For the inner 
 
-% Highlights
-\section{Aims}
-
-\todo{
-May include overall goals of the evaluation
-}
+Finally we inspect production workload traces
+that we have used for benchmarking
 
 % Highlights
 \section{System Performance}
@@ -30,10 +23,13 @@ May include overall goals of the evaluation
 Some graphs to highlight the performance of the system
 
 Describe what makes good performance
+
+Select a homogenous case (with pricing) and heterogenous (with pricing). compare their two throughputs.
 }
 
 
 % inner loop by itself
+\origclearpage
 \section{Inner Loop}
 \label{chap:}
 
@@ -361,13 +357,13 @@ Source \autocite{wangBurstGPTRealworldWorkload2025}
 }
 
 \origclearpage
-\section{Heterogeneous vs Homogenous}
- 
-\todo{
-\begin{itemize}
-\item Throughput vs Cost of Heterogeneous vs Homogenous cluster.
-\end{itemize}
-}
+%\section{Heterogeneous vs Homogenous}
+% 
+%\todo{
+%\begin{itemize}
+%\item Throughput vs Cost of Heterogeneous vs Homogenous cluster.
+%\end{itemize}
+%}
 
 \section{Discussion}
 
