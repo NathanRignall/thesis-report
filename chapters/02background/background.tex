@@ -102,6 +102,8 @@ V3 is tuned for general conversation, while R1 builds on it with enhanced reason
 % What different parallelism techniques are available
 \section{Parallelism Strategies}
 
+% An intro to parallelism strategies
+
 \textbf{Data parallelism} refers to replicating an entire model across multiple processing units, with each replica receiving a different slice of the input data.
 Hence, this technique is generally used to increase throughput of an overall system, especially in batched inference scenarios.
 
@@ -142,12 +144,16 @@ For example, code generation workloads (e.g., copilots, IDE assistants) tend to 
 In contrast, conversational workloads (e.g., chatbots) often involve shorter prompts and more frequent interactions.
 Understanding and modelling these patterns is critical for system-level optimisation and for deploying LLMs in a cost-efficient, scalable manner.
 
+Hence, to manage these complex demands, service operators rely on sophisticated schedulers and orchestration systems. %REF - LLM
+These systems are, responsible for intercepting incoming inference requests, dynamically batching them to maximise throughput, and intelligently assigning them to the most suitable hardware.
+However, platforms typically operate on homogenous hardware to simplify resource management.
+
 % Different technologies to build a scheduler 
 \section{Scheduler Technologies}
 
-\todo{Context on why talking about schedulers...
-
-Optimisation techniques...}
+Schedulers are a fundamental concept in systems and networking, used in operating systems to cloud computing, to manage and allocate resources among competing tasks.
+In the context of LLM inference, their role is to solve the complex optimisation problem of mapping a high volumes of diverse and unpredictable requests onto GPUs.
+A scheduler is the core component of an LLM serving system, implementing the logic for resource assignment that is essential for maximising hardware utilisation and meeting performance goals.
 
 % Heuristic
 \subsection{Heuristic-Based Methods}
@@ -210,8 +216,8 @@ In the context of scheduling, this enables decisions to be modelled using yes/no
 In the case where constraints cannot be as linear, \textbf{Non-Linear Programming (NLP)} can model problems where either the objective and/or constraints are non-linear functions.
 Given problems are non-linear, it is harder to guarantee a globally optimal solution is generated.
 
-\todo{
-
-\textbf{Mixed Integer Programming (MIP)} is...
-
-}
+%\todo{
+%
+%\textbf{Mixed Integer Programming (MIP)} is...
+%
+%}

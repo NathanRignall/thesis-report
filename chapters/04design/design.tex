@@ -5,12 +5,12 @@
 %This chapter may be called something else\ldots but in general the
 %idea is that you have one (or a few) ``meat'' chapters which describe
 %the work you did in technical detail.
-This chapter outlines the steps taken to design and implement a new heterogeneous scheduler for LLM workloads, with a focus on MoE.
-We begin outlining a problem description for a typical LLM scheduler, introducing the terminology used throughout the section. 
+This chapter outlines the steps taken to design and implement a new heterogeneous scheduler for LLM workloads, with support for Mixture-of-Experts models.
+We begin by outlining the problem description of an LLM scheduler, introducing the terminology used throughout this section. 
 
-Next, we outline the choice of simulator, of which we can use for throughput workload modelling expected of the system.
-Using this, we describe objectives for a bounded constraint optimisation problem, as a smaller example of a scheduler implementation.
-We then describe several scheduling assumptions which can be used as optimisation strategies 
+Next, we outline the choice of simulator, of which can be used for expected throughput workload modelling of the system.
+Using this, we describe objectives for a bounded constraint optimisation problem, as a subset of the overall scheduler.
+Then, we  describe several scheduling assumptions which can be used as optimisation strategies.
 
 We finish by brining together the workload modelling, objectives, constraint optimisation and assumptions into a single problem formulation.
 Here, we separate the scheduler into a two-stage problem, with an \textit{inner} and \textit{outer} loop.
@@ -20,15 +20,25 @@ Using this formulation we describe the specific design and then implementation o
 
 \section{Problem Description}
 
-\todo{
-\begin{itemize}
-\item Explain how schedule works
-\item ISLANDS - Explain GPU islands.
-\item Scheduler traffic direction (architecture).
-\item GPU Configurations.
-\end{itemize}
-}
+The purpose of an LLM scheduler within an inference system is to organise and configure a collection of GPUs for optimal performance.
+We can utilise previous \textit{phase splitting} technology to assign the prefill and decode phases of inference to optimal hardware, given the significant efficiency gains. 
 
+To create a schedule we must first subdivide a list of GPUs into \textit{islands}, an island is a collection of homogenous GPUs of a given type and size.
+Given a list of islands, we must then assign either prefill or decode work (and configure appropriate parallelism levels with respect to MoE), maximising a defined objective.
+In this case we are optimising for cost efficiency, so throughout / cost is a good metric.
+
+The logical architecture of such inference system is displayed in \autoref{fig:04-service-architecture}, where incoming requests are mapped to prefill islands.
+Then, after transferring the (KV) cache, completed prefill requests are sent to the optimum decode island.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth,height=5cm]{example-image-a}
+    \caption[Service Architecture]
+    {Service Archietcture}
+    \label{fig:04-service-architecture}
+\end{figure}
+
+\let\clearpage\relax
 \include{chapters/04design/simulator}
 \include{chapters/04design/modeling}
 \include{chapters/04design/objectives}
@@ -37,3 +47,4 @@ Using this formulation we describe the specific design and then implementation o
 \include{chapters/04design/architecture}
 \include{chapters/04design/inner}
 \include{chapters/04design/outer}
+\let\clearpage\origclearpage

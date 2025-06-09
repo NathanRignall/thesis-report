@@ -1,24 +1,28 @@
 \section{Simulator}
 
-In order to be able to develop an advanced heterogenous LLM scheduler, we need access to many high-performance GPUs to test our schedule configurations.
+In order to be able to develop an LLM scheduler, we need access to many high-performance GPUs to test our schedule configurations.
 Unfortunately, GPU-hours are prohibitively expensive and using such hours for ``dummy'' workloads to test a scheduler would be considered a waste of resources.
 Instead, we utilise the latest simulator technology to estimate the performance of LLM inference given a set of input parameters.
 Several simulators exist that attempt to model the performance of an LLM request by using estimation techniques.
 
 % Previous work has also used schedulers too (reference the work here).
 
-\todo{
+\textbf{Vidur} \autocite{agrawalVidurLargeScaleSimulation2024} is an LLM simulator developed by Microsoft, designed to address the high cost and complexity of experimentally finding the best deployment configuration of LLMs.
+This is achieved by profiling a model-gpu combination for expected throughput on given operations (different prefill and decode requests).
+Then, using a small machine learning model, the system predicts the likely performance with high degrees of accuracy for different prefill configurations.
 
-\textbf{Vidur \autocite{agrawalVidurLargeScaleSimulation2024}} (essentially uses linear regression)
+\textbf{Shallowsim} \autocite{icezack12Icezack12Shallowsim2025} is a specialist simulator designed to estimate the compute times for different LLM request types.
+Specifically built for DeepSeek-V3/R1 models, it has native support for simulating MoE architectures.
+Unlike Vidur, Shallowsim requires no profiling phase, rather a list of device performance metrics is provided e.g. \texttt{fp8} performance.
+These metrics are then used to compute the expected performance for the prefill and decode phase separately
 
-\textbf{Shallowsim \autocite{icezack12Icezack12Shallowsim2025}} is a specialist simulator designed to estimate the compute times for different LLM request types.
+We select Shallowsim for its transparency of calculations (simplicity), as it uses no machine learning to predict performance.
+Instead, simple operations are used, which allows us to inspect performance and modify the calculations as necessary.
+The Shallowsim simulator also already has native support for Mixture of Expert models (our key novel design goal).
 
-\textbf{LLMCompass \autocite{zhangHardwareEvaluationFramework2023}} (more detail)
+%And requires complex and expensive profiling
 
-We Select Shallowsim for its transparency for calculations (simplicity).
-And support for Mixture of Expert models (key novel).
-
-}
+%\textbf{LLMCompass \autocite{zhangHardwareEvaluationFramework2023}} (more detail)
 
 \subsection{Shallowsim Implementation}
 
@@ -27,23 +31,16 @@ And support for Mixture of Expert models (key novel).
 \textbf{Prefill}
 
 Dense-MLA (dense Multi-head/Multi-query Attention compute),
-
 TP-MLA (Dense-MLA plus the Tensor-Parallel all-reduce),
-
 Dense-MLP (feed-forward network compute),
-
 Shared-Expert (MoE expert run that every token visits),
 Routed-Expert (MoE expert run that only selected tokens visit),
-
 Every token first passes through the Shared Expert, but a subset of tokens are also routed to extra specialists. This is modelled with the Routed Expert function.
-
 Dispatch (All-to-All that ships tokens out to remote experts),
 Combine (All-to-All that brings tokens back),
-
 Sending activations to the respective routed expert nodes is modelled using the Dispatch step, the Combine step then models how processed activations are collated back together. These two functions model the network overhead of LLM queries.
 
-\textit{
-Compute Time
+\textit{Compute Time
 -	Dense MLA, Dense MLP (Dense Layers)
 -	TP-MLA, Shared Expert, Routed Expert (Sparse Layers)
 Communication Timemake 
@@ -66,8 +63,7 @@ Routed-Expert (as prefill),
 Dispatch (as prefill),
 Combine (as prefill),
 
-\textit{
-Compute Time
+\textit{Compute Time
 -	Dense MLA, Dense MLP (Dense Layers)
 -	Sparse MLA, Shared Expert, Routed Expert (Sparse Layers)
 Communication Time
@@ -82,13 +78,24 @@ Sum
 
 \subsection{Modifactions}
 
-\todo{
+We make several small modifications to the Shallowsim simulator to support our use-case of efficiently profiling system configurations.
+As-built Shallowsim is designed to profile several different parallelism configurations and batch sizes, then report back the overall fastest.
+We need support for profiling a specific parallelism configuration and batch size, as we may not always be able to use the most optimal for a given exact sequence length, but rather a range of sequence lengths.
+
+To do this, we extract all the mathematical operations present in the existing code and form procedures with specific input parameters, e.g., $\texttt{prefill\_alltoall}(\texttt{gpu}, \texttt{seq\_len}, \texttt{tp\_num})$.
+Here, we precisely specify the gpu model, input sequence length, and tensor parallelism degree.
+
+Given the modifications, shallowsim now supports the following functions:
 \begin{itemize}
-\item What we have done to modify the shallowsim simulator.
-\item As designed, shallowsim is build for profiling several different GPU configurations at once.
-\item For our system, we are particularly interested in per-configuration results.
+    \item \textbf{Prefill Performance}\ \texttt{-> Milliseconds}\\
+    \texttt{prefill\_time(gpu, seq\_len, kv\_cache\_rate, tp\_num, dp\_num)}
+    
+    \item \textbf{Decode Performance}\ \texttt{-> Milliseconds}\\
+    \texttt{decode\_time(gpu, tp\_num, bs\_num, seq\_len, decode\_len, moe\_num, device\_num)}
+    
+    \item \textbf{Maximum Batch Size}\  \texttt{-> Int}\\
+    \texttt{check\_max\_bs(gpu, tp\_num, bs\_num, seq\_len, decode\_len, moe\_num, device\_num)}
 \end{itemize}
-}
 
 \subsection{Usage}
 \label{chap:simulator-usage}

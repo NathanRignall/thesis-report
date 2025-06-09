@@ -18,33 +18,57 @@
 %although without care this can appear formulaic and tedious. Your
 %call.
 
-\todo{
-
-\begin{itemize}
-\item Intro to Chapter.
-\item Inference for LLMs has energy and power requirements .
-\item Optimising this is important for the future. 
-\item Heterogenous is better.
-\item Challenge is scheduling, that is what we look into.
-\item Specifically MoE.
-\end{itemize}
-
-}
+In this chapter, we express the motivation behind the development of a novel scheduling algorithm for Large Language Model (LLM) inference.
+We begin by outlining the significant cost and performance challenges associated with serving these models, then express the limitations of existing scheduling approaches.
+Finally, we provide an overview of our key contributions and outline the subsequent chapters of this report.
 
 \section{Motivation}
 
-Stuff.
+%% paragraph 1
 
-Questions?
+Large Language Models (LLMs) such as GPT-4 \autocite{openaiGPT4TechnicalReport2024}, Llama3 \autocite{grattafioriLlama3Herd2024}, Gemini \autocite{teamGeminiFamilyHighly2025}, and Mixtral \autocite{jiangMixtralExperts2024} have demonstrated outstanding performance across a wide range of real-world applications.
+These include coding assistants, chatbots, tools for content creation, translation services, data analysis, and even scientific research support, highlighting their versatility and transformative impact across industries.
+However, the significant computational resources required to serve these models make them extremely costly to operate and use \autocite{luccioniPowerHungryProcessing2024}.
+
+Enhancing the cost-efficiency of LLM inference is therefore vital for broader adoption and for democratising access to these cutting-edge technologies.
+While service providers initially relied on mostly homogeneous hardware \autocite{zhaoLLMPQServingLLM2024}, rising GPU costs and variable availability \autocite{miaoSpotServeServingGenerative2023} make such environments impractical to maintain.
+The rationale for embracing heterogeneous clusters is that different GPU types exhibit distinct compute and memory characteristics, which can be aligned with the different resource demands of diverse inference requests types \autocite{jiangDemystifyingCostEfficiencyLLM2025}.
+Therefore, making better use of available heterogeneous hardware to save cost is desired by both users and service providers.
+
+%paragraph 2
+% phase
+Previous research has demonstrated the benefits of \textit{phase splitting}, where the compute-bound prefill and memory-bound decode stages of inference are separated to achieve significant gains in efficiency and performance \autocite{zhongDistServeDisaggregatingPrefill2024}.
+Initial systems like Splitwise \autocite{patelSplitwiseEfficientGenerative2024} and DistServe \autocite{zhongDistServeDisaggregatingPrefill2024} pioneered this approach in homogeneous environments.
+% het
+Building on this, more recent works, such as HexGen \autocite{jiangHexGenGenerativeInference2024}, HexGen-2 \autocite{jiangHexGen2DisaggregatedGenerative2025} and ThunderServe \autocite{jiangThunderServeHighperformanceCostefficient2025}, have extended these principles to heterogeneous hardware, employing complex algorithms to manage diverse resources. 
+The core challenge with optimising heterogenous LLM deployment lies in the scheduling of requests itself.
+Efficient model serving requires co-optimising the system deployment (resource allocation, parallelism strategies) and the request routing strategy, which is an NP-hard problem \autocite{jiangHexGenGenerativeInference2024}.
+
+% concluding paragraph
+However, these advanced scheduling systems do not explicitly consider the unique architectural and computational patterns of Mixture-of-Experts (MoE) models.
+Recent advancements, particularly from models like DeepSeek-V3/R1 \autocite{deepseek-aiDeepSeekR1IncentivizingReasoning2025}, introduce additional complexities such as dynamic, fine-grained expert routing, all-to-all communication, and sophisticated KV caching strategies \autocite{deepseek-aiDeepSeekV3TechnicalReport2025}.
+Furthermore, existing schedulers often avoid highly granular workload assignment strategies due to the exploding problem space, which makes finding an optimal solution computationally prohibitive.
+Hence, the specific problem of scheduling MoE inference across heterogeneous hardware remains under-explored.
+
+% Aims
+This project aims to address this gap by developing a novel scheduling algorithm specifically designed for heterogeneous GPU clusters for use with MoE models.
+We simultaneously investigate how to improve the granularity of workload assignment, whilst also navigating the architectural characteristics of MoE in scheduling.
 
 \section{Contributions}
 
-Lienar optimiser
+This report presents a new workload-aware Mixture-of-Experts (MoE) scheduling algorithm for heterogeneous GPU clusters through several key advancements.
 
-Beysian optimisation 
+\begin{itemize}
+	\item First, we present a two-level scheduling framework containing an \textit{inner} and \textit{outer} loop. This segmentation enables the scheduler to efficiently search the problem space, whilst leveraging problem specific solver technologies at each level.
+	\item We build a linear optimisation technique for rapidly assigning specific workload ranges (prefill and decode) to GPU islands inside the \textit{inner loop}. Using precise workload characterisation, we target mapping of specific input sequence lengths to specific GPU islands. This enables the most optimal use of heterogeneous hardware, as input sequence length can significantly affect the performance requirements of the prefill and decode phase.
+	\item Next, we demonstrate the use of Bayesian Optimisation for searching how best to divide the GPUs into islands. Using a novel encoding method, we compress the problem space into just \( |T| \times 2 \), where  \( |T| \) is the total number of different GPU types. This enables a simple Gaussian Processes to search the complex division process efficiently, without incurring issues with high-dimensionality. %ref curse
+	\item Finally, we present results of the new scheduling algorithm using the sate-of-the-art Shallowsim \autocite{icezack12Icezack12Shallowsim2025} simulator.
+\end{itemize}
 
-MoE integration
+%\section{Outline}
+%
+%Chapter by chapter breakdown.
+%
+%Background, transformer models
 
-\section{Outline}
 
-Chapter by chapter breakdown.
