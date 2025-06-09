@@ -14,7 +14,25 @@
 \end{itemize}
 }
 
+Talk about Experimental Setup!!!!
+
+% Highlights
+\section{Aims}
+
+\todo{
+May include overall goals of the evaluation
+}
+
+% Highlights
+\section{System Performance}
+
+\todo{
+Some graphs to highlight the performance of the system
+}
+
+
 % inner loop by itself
+\clearpage
 \section{Inner Loop}
 \label{chap:}
 
@@ -147,7 +165,7 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 
 % outer loop + inner loop
 \clearpage
-\section{Outer Loop}
+\section{Outer Loop (Divider)}
 
 \todo{
 \begin{itemize}
@@ -169,7 +187,7 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 %Explain \autoref{fig:05-batch-analysis}
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{outer_batch_errorbars.pdf}
+    \includegraphics[width=\textwidth]{outer_batch_error_area.pdf}
     \caption[Batch Size Analysis]
     {Batch Size Analysis}
     \label{fig:05-batch-analysis}
@@ -183,7 +201,7 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.5\textwidth]{outer_batch_deltas.pdf}
+    \includegraphics[width=0.4\textwidth]{outer_batch_deltas.pdf}
     \caption[Batch Size Analysis (Time)]
     {Batch Size Analysis (Time)}
     \label{fig:05-batch-deltas}
@@ -196,7 +214,6 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 \todo{
 \begin{itemize}
 \item How changing the search params (skew) affects solution.
-\item 
 \end{itemize}
 }
 
@@ -216,6 +233,52 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 \item How changing the search params (number of islands) affects solution.
 \end{itemize}
 }
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{outer_island_error_area.pdf}
+    \caption[Min Island Analysis]
+    {Min Island Analysis}
+    \label{fig:05-min-island-analysis}
+\end{figure}
+
+
+
+% outer loop + inner loop
+\clearpage
+\section{Outer Loop (Direct)}
+
+\todo{
+\begin{itemize}
+\item Test setup.
+\item Test approach (repeat 10 times).
+\end{itemize}
+}
+
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{outer_old_saasbo_error_area.pdf}
+    \caption[Direct SAASBO Batch Size Analysis]
+    {Direct SAASBO Batch Size Analysis}
+    \label{fig:05-direct-saasbo-batch-analysis}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{outer_old_saasbo_kslots_error_area.pdf}
+    \caption[Direct SAASBO KSlots Size Analysis]
+    {Direct SAASBO KSlots Size Analysis}
+    \label{fig:05-direct-saasbo-kslots-analysis}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.4\textwidth]{outer_old_saasbo_kslots_deltas.pdf}
+    \caption[Direct SAASBO Batch Size Analysis (Time)]
+    {Direct SAASBO Batch Size Analysis (Time)}
+    \label{fig:05-direct-saasbo-batch-deltas}
+\end{figure}
 
 % Introduce where the traces have come from
 \clearpage
@@ -237,37 +300,18 @@ Source \autocite{stojkovicDynamoLLMDesigningLLM2024}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{traces_azure_context_tokens_distribution.pdf}
-    \caption[Context Tokens]
-    {Context Tokens}
-    \label{fig:05-traces-azure-context-tokens-distribution}
+    \includegraphics[width=\textwidth]{traces_azure.pdf}
+    \caption[Azure LLM Context and Generated Tokens]
+    {Azure LLM Context and Generated Tokens}
+    \label{fig:05-traces-azure}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{traces_azure_generated_tokens_distribution.pdf}
-    \caption[Decode Tokens]
-    {Decode Tokens}
-    \label{fig:05-traces-azure-generated-tokens-distribution}
-\end{figure}
-
-\begin{figure}[ht]
-    \centering
-    \begin{subfigure}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{traces_azure_conv_gen_vs_context.pdf}
-        \caption{Converstation Trace}
-        \label{fig:05-traces-azure-conv-gen-vs-context}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{traces_azure_code_gen_vs_context.pdf}
-        \caption{Code Trace}
-        \label{fig:05-traces-azure-code-gen-vs-context}
-    \end{subfigure}
-    \caption{Comparison of Converstation and Code}
-    \label{fig:05-traces-azure-gen-vs-context}
+    \includegraphics[width=\textwidth]{traces_azure_vs.pdf}
+    \caption[Azure LLM Context vs Generated Tokens]
+    {Azure LLM Context vs Generated Tokens}
+    \label{fig:05-traces-azure-vs}
 \end{figure}
 
 % Another set of traces (BurstGPT)
@@ -278,39 +322,20 @@ Source \autocite{wangBurstGPTRealworldWorkload2025}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{traces_burst_context_tokens_distribution.pdf}
-    \caption[Context Tokens]
-    {Context Tokens}
-    \label{fig:05-traces-burst-context-tokens-distribution}
+    \includegraphics[width=\textwidth]{traces_burst.pdf}
+    \caption[BurstGPT Context and Generated Tokens]
+    {BurstGPT Context and Generated Tokens}
+    \label{fig:05-traces-burst}
 \end{figure}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{traces_burst_generated_tokens_distribution.pdf}
-    \caption[Decode Tokens]
-    {Decode Tokens}
-    \label{fig:05-traces-burst-generated-tokens-distribution}
+    \includegraphics[width=\textwidth]{traces_burst_vs.pdf}
+    \caption[BurstGPT Context vs Generated Tokens]
+    {DBurstGPT Context vs Generated Tokens}
+    \label{fig:05-traces-burst-vs}
 \end{figure}
 
-\begin{figure}[ht]
-    \centering
-    \begin{subfigure}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{traces_burst_conv_gen_vs_context.pdf}
-        \caption{Converstation Trace}
-        \label{fig:05-traces-burst-conv-gen-vs-context}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}[t]{0.48\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{traces_burst_code_gen_vs_context.pdf}
-        \caption{Code Trace}
-        \label{fig:05-traces-burst-code-gen-vs-context}
-    \end{subfigure}
-    \caption{Comparison of Converstation and Code}
-    \label{fig:05-traces-burst-gen-vs-context}
-\end{figure}
- 
  \clearpage
  \subsection{Results}
  
@@ -328,3 +353,7 @@ Source \autocite{wangBurstGPTRealworldWorkload2025}
 \item Throughput vs Cost of Heterogeneous vs Homogenous cluster.
 \end{itemize}
 }
+
+\section{Discussion}
+
+(if required - may merge this with the heterogenous vs homogenous)

@@ -41,7 +41,7 @@ We can outline the steps of the \textit{inner loop} as follows:
 
 % Many linear solution
 \clearpage
-\subsection{Problem Formulation}
+\subsection{Constraint Formulation}
 \label{chap:linear-problem}
 
 We take the non-linear problem formulation from \autoref{chap:constraint-optimisation}, which contained ratios such as \(\sigma_s = R_s / R\), and transform it into an entirely linear program by introducing auxiliary variables and linear constraints.
@@ -213,19 +213,23 @@ Along with the constraints: \(x_{\mathrm{prefill},\,i j} \;\le\; 1 - z_i\), \(x_
 \clearpage
 \subsection{Implementation}
 
-\todo{
-\begin{itemize}
-\item How will this be implemented in python.
-\end{itemize}
-}
+We implement this constraint optimisation problem using \texttt{pulp}, a linear and mixed integer programming modeller written in Python.
+Given our problem uses both integer ($z$ assignment variables) and float ($x$ load variables), we need to use a Mixed-Integer Linear Programming Solver (MILP).
+The mixed nature worsens the performance but allows for the dynamic selection of which islands are provisioned for prefill and decode.
 
 \subsection{Optimisation}
 
-\todo{
-\begin{itemize}
-\item How we improve this solution further with caching.
-\end{itemize}
-}
+Given the \textit{inner loop} will be executed several times by the \textit{outer loop} during optimisation, we can improve performance through caching various results.
+
+First, we can cache the \textbf{Formulate Ranges} step by recording the computed range values in a dictionary with the workload $w$ and bin width.
+For each execution of \textit{inner loop}, these values will be constant so caching prevents unnecessary re-computation.
+
+Second we can cache the \textbf{Prefill Configuration Generation \& Benchmark} process for islands of the same type and size.
+For a constant workload, we can expect the prefill configuration and benchmark output to be constant for the same given the same island size and type.
+The proposed island size-type combination will likely repeat several hundred times in the optimisation process, saving significant compute time.
+
+Third, we can complete the same caching for the \textbf{Decode Configuration Generation \& Benchmark} step.
+This step is executed during every iteration, like prefill, so we can expect equivalent performance gains.
 
 \begin{figure}[ht]
     \centering

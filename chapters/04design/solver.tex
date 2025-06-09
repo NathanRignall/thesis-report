@@ -4,7 +4,7 @@
 
 We can combine the previous throughput calculations to form a simple constraint optimisation problem with an objective to maximise the total expected throughput $R$ and minimise the deviation $\Delta$ from the target workload distribution $p(s\mid w)$.
 
-\subsection{Problem Formulation}
+\subsection{Constraint Formulation}
 
 The following statement describes a sample non-linear optimisation problem that can be solved for either prefill or decode throughput.
 
@@ -75,12 +75,12 @@ R = \sum_{i\in I}\sum_{s\in S}b_i(s)\,x_i(s),
 \sigma_s = \frac{\sum_{i\in I}b_i(s)\,x_i(s)}{R}.
 \]
 
-\subsection{Problem Analysis}
+\subsection{Challanges}
 
 The constraint optimisation problem described is non-linear, this is due to the chained multiplications and divisions for the \textit{performance per cell} and \textit{achieved share} calculations.
  As a result, we require a non-linear programming (NLP) solver to obtain a solution for the proposed problem.
 
-While the problem can be solved using such solvers, the process tends to be computationally intensive and slow.
+While the problem can be solved using such NLP techniques, the process tends to be computationally intensive and slow.
 This is primarily due to the non-convex and non-linear nature of the formulation, which makes it difficult to guarantee convergence to the global optimum.
 Ideally, we would like to linearise this problem to improve computational efficiency and enhance the reliability of finding the best possible solution.
 

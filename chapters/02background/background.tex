@@ -43,23 +43,14 @@ The process begins with input embeddings and positional encodings, where each to
 Positional encodings are then added to incorporate information about the position of each token in the sequence.
 Next, the model computes the Query (Q), Key (K), and Value (V) vectors for each token by projecting the input embeddings through learned linear transformations.
 Using the Q, K, and V vectors, the model performs scaled dot-product attention to compute attention scores and weigh the significance of other tokens in the sequence relative to each token.
+% \autocite{tunstallNaturalLanguageProcessing2022}
 
 The output of the attention mechanism is passed through a residual connection and a layer normalisation step.
 This is followed by a position-wise feed-forward network, which consists of two linear transformations with a ReLU activation (or GELU in some models) in between, applied independently to each position.
 In deep Transformer models, these components (attention, residual connection, normalisation, and feed-forward layers) are stacked multiple times.
 The output of one layer serves as the input to the next.
 Finally, the output of the last Transformer layer is passed through a linear projection layer to produce the final output, depending on the task.
-
-%\subsection{Computation Steps}
-%There are several compute steps involved in a Transformer model's forward pass, during inference tasks.
-%The process begins with processing input embeddings and positional encodings, where each token in the input sequence is converted into a vector, using a learned embedding matrix.
-%Next, the model computes the Query (Q), Key (K) and Value (V) vectors for each token, this is calculated by projecting the input embeddings through learned linear transformations.
-%Using the Q, K, and V values the model performs Scaled Dot-Product Attention to weigh the significance of other tokens in the sequence relative to the current token.
-%
-%The add and normalisation steps follow attention, where the output of the attention mechanism is added back to the original input embedding, and the result is passed through a layer normalisation step. 
-%This is followed by a position-wise feed-forward network, which consists of two linear transformations with a ReLU activation in between, applied independently to each position.
-%For deep models, these layers are stacked on top of each other, with the output of one layer serving as the input to the next
-%Finally, the output of the last transformer layer is typically passed through a final linear layer to project it into the desired output format.
+% \autocite{zhangDiveDeepLearning2021}
 
 \subsection{Prefill and Decode}
 \label{chap:prefill-decode}
@@ -91,97 +82,70 @@ This technique comes at the cost of using more GPU memory, reducing the maximum 
 
 \subsection{Mixture of Experts} 
 
-\todo{
-\begin{itemize}
-\item To Complete.
-\end{itemize}
-}
+Mixture of Experts (MoE) is a neural network architecture designed to scale model capacity without a proportional increase in computational cost \autocite{shazeerOutrageouslyLargeNeural2017}.
+Unlike dense transformers where all parameters are used for every input, MoE models contain a pool of expert sub-networks, of which only a small subset are activated during inference for any given input token.
 
-%\todo{
-%A neural network architecture specifically design to scale up models
-%%
-%Instead of one big model
-%Pool of expert networks
-%For each input token, usually only a subset of these experts are activated
-%Router chooses which experts to use based on the input
-%%
-%Designed to be compute efficient
-%Only the activate experts consume compute
-%Allows for scaling up a model's capacity (without linear increase in inference cost)
-%%
-%Good
-%Big model cpacpaity
-%Better scling lwas
-%Felxiblke
-%%
-%Bad
-%Routing instability
-%Load balancing
-%Complexity
-%}
+In a typical MoE transformer layer, a router network determines which experts to activate for each token.
+This is often achieved using top-k routing, where the router selects the top $k$ experts based on a learned score for each input token.
+The selected experts are then applied to the input, and their outputs are combined before passing to the next layer \autocite{lepikhinGShardScalingGiant2020}.
 
 % How this problem is different for MoE
 \subsection{DeepSeek Architecture}
 
-\todo{
-\begin{itemize}
-\item To Complete. Focus on MoE, A2A etc.
-\end{itemize}
-}
+DeepSeek V3 and R1 are both LLMs that share a decoder-only Mixture-of-Experts (MoE) architecture with sparse expert activation, enabling over 670B total parameters while activating only approximately 37B per token.
+Both models support long-context inference (up to 128K tokens) and are trained using FP8 mixed-precision for efficiency.
 
-%\todo{Some information about the DeepSeek architecture.
-%%
-%Focus on MoE, A2A etc.}
+A key feature of their model architecture is the use of KV cache compression during inference.
+Instead of storing full-precision key and value tensors for each expert, DeepSeek compresses these representations, significantly reducing memory bandwidth and enabling faster decode performance despite the model’s massive scale.
+V3 is tuned for general conversation, while R1 builds on it with enhanced reasoning capabilities.
 
 % What different parallelism techniques are available
 \section{Parallelism Strategies}
 
-\textbf{Data parallelism} refers to replicating a model across multiple processing units (GPUs / CPUs / TPUs), with each replica receiving a different slice of the input data.
-Hence, this technique is generally used to increase throughput of an overall system, especially in batched inference scenarios
+\textbf{Data parallelism} refers to replicating an entire model across multiple processing units, with each replica receiving a different slice of the input data.
+Hence, this technique is generally used to increase throughput of an overall system, especially in batched inference scenarios.
 
-%Example - batch of requests is split between 100 / 4 =25
-
-\textbf{Model parallelism} involves partitioning the model itself across several processing units, where each device is responsible for a portion of the model's layers or operations. This is most helpful when a model cannot fit on a single device, due to memory demand greater than what is available.
-
-\todo{Enables inference on devices that individually do not support
-%
-Every forward pass requires synchronisation, introducing a communication overhead that may negatively impact latency
-%
-Example}
+\textbf{Model parallelism} involves partitioning the model itself across several processing units, where each device is responsible for a portion of the model's layers or operations.
+This is most helpful when a model cannot fit on a single device, due to memory demand greater than what is available.
 
 \textbf{Tensor parallelism} is a specialised form of model parallelism, generally used with large deep learning models.
-%
-\todo{Individual tensors are split across multiple devices (rather than whole layers
-%
-Operator-Level parallelism
-Stuff}
+Individual tensors are split across multiple devices (rather than whole layers), reducing the communication overhead which may otherwise negatively impact latency.
 
-\textbf{Pipeline Parallelism}
-\todo{Research}
+\textbf{Pipeline Parallelism} is another form of model parallelism, where models are divided layer-wise (sequentially) and inputs are processed in a pipeline.
+This is in contrast to tensor parallelism, which are split within layers and model parallelism which is more coarse grained.
 
-\textbf{Expert Parallelism}
-\todo{Mixture of experts 
-%
-Expert parallelism occurs when different experts are placed on different devices and are activated in parallel for}
+\textbf{Expert Parallelism} occurs when different experts are placed on different processing units and are activated in parallel.
+Some large language models use Mixture of Experts to help improve model performance.
 
-\textbf{Batching}
+\textbf{Batching} groups multiple inference requests to process them simultaneously, maximising hardware utilisation and overall system throughput.
 
-\todo{What are the different types of batching, how does this affect the overall performance on the system?
-Focus on latency, 99th percentile}
+\textit{Static batching} accumulates requests until a batch is full or a timeout is reached.
+All requests are processed together and must wait for the slowest one to finish, leading to inefficient GPU usage and higher latency.
+\textit{Continuous batching} is a dynamic method that immediately adds new requests to the batch as soon as others complete.
+This keeps the hardware constantly active, significantly increasing throughput and reducing idle time.
+
+Batching increases throughput at the cost of individual request latency.
+Continuous batching is superior as it offers much higher throughput while also providing lower and more predictable latency
 
 % Why inference is hard
 \section{Inference Challenges}
 \label{chap:inference-challanges}
 
-\todo{
-\begin{itemize}
-\item Why inferences is hard.
-\item How workloads are modelled (code vs conversation).
-\end{itemize}
-}
+Inference for LLMs poses significant technical and operational challenges, especially at scale.
+Unlike traditional ML model, where inference is relatively lightweight, LLMs often require billions of parameters to be loaded and operated on for every user interaction.
+This results in high compute demands and considerable memory pressure, necessitating powerful and costly GPU infrastructure.
+
+%One of the core difficulties is that inference must occur in real time.
+%While training can be batched and scheduled offline, inference must meet latency expectations across unpredictable workloads, often with minimal tolerance for delay.
+%This becomes more difficult as models grow in size and user demand scales exponentially.
+%Consequently, GPU availability—not just compute throughput—becomes a primary bottleneck, especially for decoding-heavy tasks where memory bandwidth dominates.
+
+LLM Inference workloads also vary significantly depending on the application.
+For example, code generation workloads (e.g., copilots, IDE assistants) tend to have longer sequences and larger context windows, leading to slower decode-heavy patterns with less reuse and more frequent KV cache growth.
+In contrast, conversational workloads (e.g., chatbots) often involve shorter prompts and more frequent interactions, allowing for more batching and reuse, but with higher real-time latency sensitivity.
+Understanding and modelling these patterns is critical for system-level optimisation and for deploying LLMs in a cost-efficient, scalable manner.
 
 % Different technologies to build a scheduler 
-\clearpage
 \section{Scheduler Technologies}
 
 \todo{Context on why talking about schedulers...

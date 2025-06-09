@@ -17,7 +17,7 @@ This distribution satisfies: $\sum_{s \in S} p(s \mid w) = 1 \quad \text{for all
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\textwidth]{traces_prefill_sample.pdf}
+    \includegraphics[width=0.8\textwidth]{traces_sample_pdfs.pdf}
     \caption[Sample probability distribution of input sequence lengths]
     {Sample probability distribution of input sequence length. Modelled using a pdf where $mu=500$, $sigma=2000$ and truncated/normalised to the range \(0 \leq s \leq 8000\).}
     \label{fig:04-sample-prefill-pdf}
@@ -48,10 +48,10 @@ Unlike the sequence length, the decode length is simply being used for system mo
 However, we can still make scheduling decisions for the decode phase using the sequence length as a feature, given the maximum decode length affected by the input length.
 This is due to all the input and decode tokens KV values being stored in GPU memory.
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\textwidth]{traces_decode_sample.pdf}
-    \caption[Sample probability distribution of decode lengths]
-    {Sample probability distribution of decode length. Modelled using a pdf where $mu=100$, $sigma=200$ and truncated/normalised to the range \(0 \leq s \leq 500\). Average decode length (100) and max decode length (500) are extracted for use in the scheduler.}
-    \label{fig:04-sample-decode-pdf}
-\end{figure}
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=0.8\textwidth]{traces_decode_sample.pdf}
+%    \caption[Sample probability distribution of decode lengths]
+%    {Sample probability distribution of decode length. Modelled using a pdf where $mu=100$, $sigma=200$ and truncated/normalised to the range \(0 \leq s \leq 500\). Average decode length (100) and max decode length (500) are extracted for use in the scheduler.}
+%    \label{fig:04-sample-decode-pdf}
+%\end{figure}

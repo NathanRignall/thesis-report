@@ -45,39 +45,30 @@ The \textit{outer loop} receives an input inventory, containing a list of GPU ty
 Given the inventory, the \textit{outer loop's} job is to propose new island layouts (\(\mathcal{I}\)), which can be subsequently evaluated by the \textit{inner loop}.
 
 The \textit{inner loop} execution is somewhat expensive, hence a complete grid search would incur significant compute time.
-Instead we use a refined Bayesian Optimisation search method with two different methods for searching, \textit{direct} and \textit{divided}.
-
-
-%also simplier
-
-%Given the BO approach we propose 
-
-%\textit{direct}
-%
-%\textit{divided}
+Instead we use a refined Bayesian Optimisation search method with two different methods for searching, \textit{direct} (\autoref{chap:island-direct} and \textit{divided} (\autoref{chap:island-divide}).
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth,height=6cm]{example-image-a}
+    \includegraphics[width=\textwidth,height=5cm]{example-image-a}
     \caption[Diagram showing effective purpose of \textit{outer loop}]
     {Diagram showing effective purpose of \textit{outer loop}.}
     \label{fig:04-outer-loop-demo}
 \end{figure}
 
-\todo{
-\begin{itemize}
-\item A little more on why BO and not RL.
-\end{itemize}
-}
+We select Bayesian Optimisation specifically due to its ability to efficiently explore high-dimensional, expensive‐to‐evaluate spaces with only a few hundred evaluations, rather than the exponential cost of a full grid search.
+By maintaining a surrogate model of the island‐layout performance (Gaussian process over layouts), Bayesian Optimisation balances exploration (sampling layouts in poorly understood regions) with exploitation (refining around the current best layouts).
+
+Unlike reinforcement learning, which often requires thousands of interactions to learn a policy, BO is designed for “one‐shot” black‐box optimisation.
+With the correct parameters it can deliver near‐optimal solutions with far fewer simulator calls, minimal hyper-parameter tuning, and strong convergence.
 
 % First BO Method
-\clearpage
 \subsection{Direct Island Generation}
+\label{chap:island-direct}
 
 In the \textit{direct} island generation approach, islands are explicitly defined within the Bayesian Optimisation process.
-Configurations correspond to a fixed number of islands, with each candidate solution representing a specific allocation.
-The number of GPUs in each island are directly part of the output space, where specific variables represent the GPU count per island `slot'.
-This setup provides precise control over how resources are grouped, but it also requires well-defined constraints to ensure that all generated configurations are valid.
+Configurations correspond to a fixed number of islands, with each candidate solution representing a specific allocation strategy.
+The number of GPUs in each island is directly part of the output space, where specific variables represent the GPU count per island `slot'.
+This setup provides precise control over how GPUs are grouped, but it also requires well-defined constraints to ensure that all generated configurations are valid.
 
 \subsubsection*{Search Parameters}
 
@@ -129,8 +120,9 @@ For each GPU type \( t \in T \), we enforce that the total number of GPUs alloca
 % Second BO method
 \clearpage
 \subsection{Divider Island Generation}
+\label{chap:island-divide}
 
-The \textit{divider} island generation method uses a more abstract representation that substantially reduces the dimensionality of the problem.
+The \textit{divider} island generation method uses a more abstract representation that substantially reduces the dimensionality of the BO problem.
 Explicit allocation at the slot level requires one parameter per slot per GPU type, resulting in a parameter space of size \( |G| \times K \).
 This approach becomes quickly computationally expensive due to the high number of search parameters and the need for constraints to ensure valid configurations.
 
@@ -160,16 +152,10 @@ Finally, \(I_{\text{min}}\) specifies the minimum number of GPUs that any island
 
 \subsubsection{Preconditions}
 Initially, we verify that the input parameters meet a series of constraints, if any of these conditions is not met, the procedure raises an error and terminates immediately.
-The requirement \(I_{\text{min}} > 0\) ensures that each island contains at least one GPU, since a non-positive minimum would be impossible.
-Similarly, \(G_{\text{total}}\) must be nonnegative because a negative total GPU count is invalid, and \(N_{\text{target}}\) must also be nonnegative because a negative number of islands cannot be requested
-
+We require \(I_{\text{min}} > 0\), \(G_{\text{total}}\) and \(N_{\text{target}}\) must be nonnegative.
 Next, we perform trivial checks to assess whether it is possible to create at least one island given the input parameters.
-If \(N_{\text{target}} = 0\), then no islands are to be created and the function returns the empty set \(\varnothing\).
-The procedure then addresses cases in which allocation is not possible: if \(G_{\text{total}} = 0\), there are no GPUs to allocate and the function returns \(\varnothing\).
-Similarly, if \(G_{\text{total}} < I_{\text{min}}\), there are insufficient GPUs to form even a single island of size \(I_{\text{min}}\), so the function again returns \(\varnothing\).
-Only when all these preliminary checks have passed does the algorithm proceed to determine the feasible number of islands and distribute the GPUs accordingly.
-
-% Maybe simplify to just say that bad inputs are discounted
+If \(N_{\text{target}} = 0\), \(G_{\text{total}} = 0\) or \(G_{\text{total}} < I_{\text{min}}\), then no islands are to be created and the function returns the empty set \(\varnothing\).
+Similarly, if , there are insufficient GPUs to form even a single island of size \(I_{\text{min}}\), so the function again returns \(\varnothing\).
 
 \subsubsection{Number of Islands}
 
@@ -190,7 +176,7 @@ In the case where \(G_{\text{remaining}} = 0\), all GPUs have already been assig
 When \(N_{\text{actual}} = 1\), there is only a single island so we add all \(G_{\text{remaining}}\) GPUs to that island.
 Otherwise we can distribute the remaining GPUs using the \(S_{\text{skew}}\)value.
 
-The distribution begins with the calculation of a weight $w_k$ for each island $k$, where $k$ ranges from $1$ to $N_{\text{actual}}$, computed as $w_k = k^{S_{\text{skew}}}$.
+We first compute a weight $w_k$ for each island $k$, where $k$ ranges from $1$ to $N_{\text{actual}}$, computed as $w_k = k^{S_{\text{skew}}}$.
 However, if $S_{\text{skew}}$ is numerically close to zero, each island is given an equal weight of $w_k = 1.0$.
 These weights are then normalised so that we can derive proportions $p_k$, indicating each island's share of the remaining GPUs. The sum of the weights is computed as
 \[
