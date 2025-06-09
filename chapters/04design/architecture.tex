@@ -6,8 +6,6 @@ During \autoref{chap:constraint-optimisation} we formulated a non-linear bounded
 In a true scheduling problem we expect to be allocated an inventory of different GPU types, not formed islands.
 Let \(T\) be the set of GPU types and for each \(t \in T\), let \(I_t\) be the number of GPUs of type \(t\) allocated in the inventory. The full GPU inventory is then the set \(\{\,I_t : t \in T\}\), with total number of GPUs in the system modelled as
 \(N \;=\; \sum_{t \in T} I_t\).
-%Let \(T\) be the set of GPU types an for each \(t\in T\), let \(n_t\) be the number of GPUs of type \(t\) allocated in the inventory.
-%The full GPU inventory is then the vector \(\bigl(n_t\bigr)_{t\in T}\), with total number of GPUs in the system modelled as \(N = \sum_{t\in T} n_t\).
 
 Similar to ThunderServe \autocite{jiangThunderServeHighperformanceCostefficient2025}, we can separate this scheduling problem as two separate, distinct stages.
 The first stage is the island layout generation, which we can treat as a search-like optimisation problem in which we explore combinations of GPU island sizes and types.
@@ -19,19 +17,27 @@ The \textit{outer loop} is responsible for generating promising island layouts, 
 The resulting throughput is returned to the \textit{outer loop}, allowing the optimisation process to evaluate and refine its search for effective configurations.
  This iterative cycle can be repeated multiple times to generate progressively generate an optimum solution.
  
+%\begin{figure}[ht]
+%    \centering
+%   \begin{tikzpicture}[
+%			node distance=1.8cm and 2.5cm,
+%			every node/.style={draw, align=center, minimum height=1.2cm, minimum width=3cm},
+%			arrow/.style={->, thick}
+%		]
+%		% Nodes
+%		\node (outer) {Outer Optimiser};
+%		\node (inner) [right=of outer] {Inner min-cost\\ flow};
+%		\node (model) [below=of inner, yshift=-0.5cm] {Model};
+%	\end{tikzpicture}
+%    \caption[Problem formulation demonstrating the data flow between the \textit{inner} and \textit{outer} loop.]
+%    {Problem formulation demonstrating the data flow between the \textit{inner} and \textit{outer} loop.}
+%    \label{fig:04-problem-formulation}
+%\end{figure}
+
 \begin{figure}[ht]
     \centering
-   \begin{tikzpicture}[
-			node distance=1.8cm and 2.5cm,
-			every node/.style={draw, align=center, minimum height=1.2cm, minimum width=3cm},
-			arrow/.style={->, thick}
-		]
-		% Nodes
-		\node (outer) {Outer Optimiser};
-		\node (inner) [right=of outer] {Inner min-cost\\ flow};
-		\node (model) [below=of inner, yshift=-0.5cm] {Model};
-	\end{tikzpicture}
-    \caption[System Archiecture]
-    {System Archiecture}
+    \includegraphics[width=\textwidth,height=8cm]{example-image-a}
+    \caption[Problem formulation demonstrating the data flow between the \textit{inner} and \textit{outer} loop operations.]
+    {Problem formulation demonstrating the data flow between the \textit{inner} and \textit{outer} loop operations.}
     \label{fig:04-problem-formulation}
 \end{figure}

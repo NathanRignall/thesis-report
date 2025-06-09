@@ -5,10 +5,25 @@
 %This chapter may be called something else\ldots but in general the
 %idea is that you have one (or a few) ``meat'' chapters which describe
 %the work you did in technical detail.
+This chapter outlines the steps taken to design and implement a new heterogeneous scheduler for LLM workloads, with a focus on MoE.
+We begin outlining a problem description for a typical LLM scheduler, introducing the terminology used throughout the section. 
+
+Next, we outline the choice of simulator, of which we can use for throughput workload modelling expected of the system.
+Using this, we describe objectives for a bounded constraint optimisation problem, as a smaller example of a scheduler implementation.
+We then describe several scheduling assumptions which can be used as optimisation strategies 
+
+We finish by brining together the workload modelling, objectives, constraint optimisation and assumptions into a single problem formulation.
+Here, we separate the scheduler into a two-stage problem, with an \textit{inner} and \textit{outer} loop.
+The \textit{inner loop} assigns specific workloads to GPU islands using deterministic bin-packing.
+In contrast the \textit{outer loop} performs a heuristic search to find the best inputs for the \textit{inner loop}.
+Using this formulation we describe the specific design and then implementation of the two loops, in preparation for evaluation and testing.
+
+\section{Problem Description}
+
 \todo{
 \begin{itemize}
-\item Intro to Chapter.
-\item Explain GPU islands.
+\item Explain how schedule works
+\item ISLANDS - Explain GPU islands.
 \item Scheduler traffic direction (architecture).
 \item GPU Configurations.
 \end{itemize}

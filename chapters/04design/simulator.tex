@@ -94,8 +94,8 @@ Sum
 \label{chap:simulator-usage}
 
 \subsubsection{Prefill Phase}
-Using the Shallowsim simulator we can measure the time $t_{\text{ms}}$ (in milliseconds) to compute a single prefill request for a given set of parameters, and convert this to throughput R (in requests per second) via
-$R_{\text{prefill}} = \frac{1000}{t_{\text{ms}}}\,$.
+Using the Shallowsim simulator we can measure the time $t$ (in milliseconds) to compute a single prefill request for a given set of parameters, and convert this to throughput R (in requests per second) via
+$R_{\text{prefill}} = \frac{1000}{t}$.
 
 % include sample parameters for prefill function
 
@@ -106,14 +106,10 @@ The decode time of a single token is affected by the input/current sequence leng
 
 % graph of sequence length affecting decode time
 
-By measuring $t_{\text{ms},i}$ the compute time (in milliseconds) for the $ith$ token, the total decode time for a request generating N tokens is
-$t_{\text{decode}} \;=\;\sum_{i=1}^{N} t_{\text{ms},i}\,$.
-
-% include sample parameters for decode function
-
+By measuring $t_i$ the compute time (in milliseconds) for the $ith$ token, the total decode time for a request generating N tokens is $t_{\text{decode}} \;=\;\sum_{i=1}^{N} t_i\,$.
 We can then convert this total time into throughput $R_{\text{decode}}$ (in requests per second), using the same method as prefill.
 $R_{\text{decode}}
 \;=\;\frac{1000}{t_{\text{decode}}}
-\;=\;\frac{1000}{\sum_{i=1}^{N} t_{\text{ms},i}}\,$,
+\;=\;\frac{1000}{\sum_{i=1}^{N} t_i}\,$,
 where $R_{\text{decode}}$ represents how many full decode requests per second the configuration can sustain.
 

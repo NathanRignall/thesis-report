@@ -26,6 +26,7 @@
 \usepackage{multirow}   % only if you use \multirow{…}
  \usepackage{array} 
  \usepackage{tabularx}  % only if you want auto-wrapping or special column widths
+\usepackage{url}
 
 % diagram packages
 \usepackage{tikz}
@@ -127,23 +128,20 @@ Main chapters (excluding front-matter, references and appendix):
 \contentpages~pages
 (pp~\pageref{firstcontentpage}--\pageref{lastcontentpage})
 
-Main chapters word count: 8576
+Main chapters word count: 11405
 
 Methodology used to generate that word count:
 
-[For example:
-
+[
 \begin{quote}
 \begin{verbatim}
 $ make wordcount
 gs -q -dSAFER -sDEVICE=txtwrite -o - \
-      -dFirstPage=9 -dLastPage=52 report-submission.pdf | \
+      -dFirstPage=10 -dLastPage=61 report-submission.pdf | \
    egrep '[A-Za-z]{3}' | wc -w
-8576
-    
+11405
 \end{verbatim}
 \end{quote}
-
 ]
 
 \end{sffamily}

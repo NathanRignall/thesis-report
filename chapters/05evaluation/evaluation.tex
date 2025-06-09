@@ -28,6 +28,8 @@ May include overall goals of the evaluation
 
 \todo{
 Some graphs to highlight the performance of the system
+
+Describe what makes good performance
 }
 
 
@@ -70,6 +72,8 @@ These islands are crafted to show the importance of selecting appropriate island
 As the \textit{inner loop} solution generation is deterministic we only execute each test case once, unless stated otherwise.
 This is because the linear solver will produce the exact same solution upon every execution, given the same input variables.
 
+% Also include some methodology as to why certain input variables were selected.
+
 \clearpage
 \subsection{Solver Results}
 % TODO - Must also include all the input parameters the solver 
@@ -83,7 +87,7 @@ This is due to the decode phase requiring more memory to execute, hence not all 
     \centering
     \includegraphics[width=\textwidth]{inner_benchmark_all_inventories.pdf}
     \caption[Benchmark results for every island test case] 
-    {Benchmark results for every island test case}
+    {Prefill and decode benchmark results for test case, each colour represents a different island in the configuration.}
     \label{fig:05-inner-benchmark}
 \end{figure}
 
@@ -100,7 +104,7 @@ Also, for all scenarios, one large island is generally allocated for decode and 
     \centering
     \includegraphics[width=\textwidth]{inner_assignment_all_inventories.pdf}
     \caption[Assignment values percentage (per range) for each every island test case]
-    {Assignment values percentage (per range) for each every island test case, using artificial workload as described in \autoref{fig:04-sample-prefill-pdf}}
+    {Assignment values percentage (per range) for each island test case, using artificial workload as described in \autoref{fig:04-sample-prefill-pdf}}
     \label{fig:05-inner-assignment}
 \end{figure}
 
@@ -109,7 +113,7 @@ Collating the assignment percentages with throughout measurements (\autoref{fig:
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{inner_throughput_all_inventories.pdf}
-    \caption[Throughput per range for each every island test case]
+    \caption[Throughput per range for each island test case]
     {Throughput per range for each every island test case, using artificial workload as described in \autoref{fig:04-sample-prefill-pdf}}
     \label{fig:05-inner-throughput}
 \end{figure}
@@ -125,8 +129,8 @@ We also include the workload \textit{trace} as a reference to what the target th
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{inner_trace_throughput}
-    \caption[Inner Trace Throughput]
-    {Inner Trace Throughput}
+    \caption[Throughput per sequence length for each island test case]
+    {Throughput per sequence length for each island test case, using artificial workload as described in \autoref{fig:04-sample-prefill-pdf}. Such probability trace is overlaid and scaled to demonstrate solution divergence.}
     \label{fig:05-inner-trace-throughput}
 \end{figure}
 
@@ -256,6 +260,7 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 }
 
 
+\subsection{SAASBO Implementation}
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{outer_old_saasbo_error_area.pdf}
@@ -280,6 +285,16 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
     \label{fig:05-direct-saasbo-batch-deltas}
 \end{figure}
 
+\clearpage
+\subsection{BO Implementation}
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{outer_old_bo_error_area.pdf}
+    \caption[Direct BO Batch Size Analysis]
+    {Direct BO Batch Size Analysis}
+    \label{fig:05-direct-bo-batch-analysis}
+\end{figure}
+
 % Introduce where the traces have come from
 \clearpage
 \section{Real-World}
@@ -287,6 +302,7 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 \todo{
 \begin{itemize}
 \item End-to-end analysis with real-world traces.
+\item Pick several different inventories
 \end{itemize}
 }
 

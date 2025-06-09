@@ -139,15 +139,11 @@ The inner pipeline optimisation process uses dynamic programming to determine th
 
 A unique contribution of HexGen is its support for asymmetric parallelism, meaning each pipeline stage can be assigned a different tensor model parallel degree and number of layers.
 This flexibility is enables mapping of LLMs onto diverse GPUs with varying compute capabilities.
-
-%While the system's cost model accounts for communication overhead between pipeline stages, it 
-
-does not introduce a specific novel technique for KV cache management. 
-
-% kv cache
-
 The authors claim that for the same budget, HexGen can achieve up to 2.3x lower latency deadlines or tolerate up to 4x more requests than a homogeneous baseline.
 
+%While the system's cost model accounts for communication overhead between pipeline stages, it 
+% kv cache
+%does not introduce a specific novel technique for KV cache management. 
 
 \subsection{Thunderserve}
 \textcite{jiangThunderServeHighperformanceCostefficient2025} build Thunderserve, another LLM serving system designed specifically for heterogeneous hardware. 
@@ -158,15 +154,11 @@ Whereas the lower level, given the group assignments, deduces the optimal parall
 The authors also introduce lightweight re-scheduling mechanisms, designed to adapt to fluctuating online conditions like workload shifts or node failures without service restarts.
 The system adapts to changing workloads by only adjusting phase designation and orchestration, to minimise user disruption from rescheduling.
 
-% KV cache compression technique to reduce data transfer costs over low-bandwidth networks and a 
+% kv cache intro
 
-Good cost efficiency
-
-% Problems
-The KV cache compression is an lossy process that could negatively affect performance on tasks requiring perfect fidelity (additional analysis required)
-
-Also the search algorithm 
- Search heuristic to solve an NP-hard problem; while effective, it is not guaranteed to find the absolute global optimum,
+Thunderserve presents a 2.1x increase in throughput and a 2.5x reduction in latency deadlines for the same price budget
+However, the KV cache compression is an lossy process that could negatively affect performance on tasks requiring perfect fidelity (additional analysis required)
+Also the search algorithm is heuristic-based so is not guaranteed to find the absolute global optimum solution.
  
 \section{Summary and Future Work}
 
@@ -177,11 +169,3 @@ HexGen introduced asymmetric parallelism for greater flexibility, while ThunderS
 A shared limitation across these systems is that they primarily focus on standard transformer architectures.
 They do not explicitly consider or optimise for the unique characteristics of Mixture-of-Experts (MoE) models, which have different architectural and computational patterns.
 We exploit this gap to develop a heterogenous scheduler for MoE, targeted towards the sate-of-the-art DeepSeek V3 architecture \autocite{deepseek-aiDeepSeekV3TechnicalReport2025}.
-
-%Whilst also using different scehduling techniques
-%To more precisely optimise the system
-
-%\textbf{HexGen} and \textbf{ThunderServe} are responsible for LLM serving with heterogeneous clusters, but they fail to consider the unique characteristics of MoE architecture.
-% While these systems represent the state-of-the-art in scheduling for heterogeneous environments, their optimizations are designed around standard, dense transformer models.
-% The distinct computational patterns of Mixture-of-Experts (MoE) models, which involve dynamic token routing and loading different "expert" sub-networks, present a new set of scheduling challenges that are not addressed.
-% Future work could focus on adapting these advanced scheduling techniques to efficiently manage the sparse and dynamic expert activation inherent in MoE models.

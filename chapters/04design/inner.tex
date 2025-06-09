@@ -215,7 +215,7 @@ Along with the constraints: \(x_{\mathrm{prefill},\,i j} \;\le\; 1 - z_i\), \(x_
 
 We implement this constraint optimisation problem using \texttt{pulp}, a linear and mixed integer programming modeller written in Python.
 Given our problem uses both integer ($z$ assignment variables) and float ($x$ load variables), we need to use a Mixed-Integer Linear Programming Solver (MILP).
-The mixed nature worsens the performance but allows for the dynamic selection of which islands are provisioned for prefill and decode.
+The mixed-integer nature worsens the solve performance but allows for the dynamic selection of which islands are provisioned for prefill and decode.
 
 \subsection{Optimisation}
 

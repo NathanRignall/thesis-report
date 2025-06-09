@@ -4,7 +4,7 @@
 
 Within this Chapter we introduce the concepts behind transformer models, their associated computing steps and the different phases of inference.
 %such that we can understanding optimisatoion
-We also introduce several technologies which can be used for building schedules in computer systems.
+We also introduce several technologies which can be used for building schedulers in computer systems.
 
 %A more extensive coverage of what's required to understand your work.
 %In general you should assume the reader has a good undergraduate
@@ -111,6 +111,8 @@ This is most helpful when a model cannot fit on a single device, due to memory d
 \textbf{Tensor parallelism} is a specialised form of model parallelism, generally used with large deep learning models.
 Individual tensors are split across multiple devices (rather than whole layers), reducing the communication overhead which may otherwise negatively impact latency.
 
+% pipeline parallelism, one common model parallelism strategy used in existing LLM serving frameworks (e.g., vLLM). Pipeline parallelism is mainly used for inter-machine communication, since the pipeline communication cost is much less than tensor and expert parallelism, which is suitable for making use of inter-machine low communication bandwidth.
+
 \textbf{Pipeline Parallelism} is another form of model parallelism, where models are divided layer-wise (sequentially) and inputs are processed in a pipeline.
 This is in contrast to tensor parallelism, which are split within layers and model parallelism which is more coarse grained.
 
@@ -132,17 +134,12 @@ Continuous batching is superior as it offers much higher throughput while also p
 \label{chap:inference-challanges}
 
 Inference for LLMs poses significant technical and operational challenges, especially at scale.
-Unlike traditional ML model, where inference is relatively lightweight, LLMs often require billions of parameters to be loaded and operated on for every user interaction.
+Unlike traditional ML model, where inference is relatively lightweight, LLMs often require billions of parameters to be loaded and operated on for every user request.
 This results in high compute demands and considerable memory pressure, necessitating powerful and costly GPU infrastructure.
 
-%One of the core difficulties is that inference must occur in real time.
-%While training can be batched and scheduled offline, inference must meet latency expectations across unpredictable workloads, often with minimal tolerance for delay.
-%This becomes more difficult as models grow in size and user demand scales exponentially.
-%Consequently, GPU availability—not just compute throughput—becomes a primary bottleneck, especially for decoding-heavy tasks where memory bandwidth dominates.
-
 LLM Inference workloads also vary significantly depending on the application.
-For example, code generation workloads (e.g., copilots, IDE assistants) tend to have longer sequences and larger context windows, leading to slower decode-heavy patterns with less reuse and more frequent KV cache growth.
-In contrast, conversational workloads (e.g., chatbots) often involve shorter prompts and more frequent interactions, allowing for more batching and reuse, but with higher real-time latency sensitivity.
+For example, code generation workloads (e.g., copilots, IDE assistants) tend to have longer sequences and larger context windows, leading to slower decode-heavy operations.
+In contrast, conversational workloads (e.g., chatbots) often involve shorter prompts and more frequent interactions.
 Understanding and modelling these patterns is critical for system-level optimisation and for deploying LLMs in a cost-efficient, scalable manner.
 
 % Different technologies to build a scheduler 

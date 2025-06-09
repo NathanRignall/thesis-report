@@ -70,7 +70,7 @@ Configurations correspond to a fixed number of islands, with each candidate solu
 The number of GPUs in each island is directly part of the output space, where specific variables represent the GPU count per island `slot'.
 This setup provides precise control over how GPUs are grouped, but it also requires well-defined constraints to ensure that all generated configurations are valid.
 
-\subsubsection*{Search Parameters}
+\subsubsection*{Bayesian Search Parameters}
 
 \begin{itemize}
     \item \( T \): the set of GPU types, e.g., \( T = \{\text{A100}, \text{V100}, \ldots\} \)
@@ -85,7 +85,7 @@ This setup provides precise control over how GPUs are grouped, but it also requi
 %x_{g,k} \in \{0, 1, \ldots, I_t\}, \quad \forall t \in T, \; \forall k \in \{1, \ldots, K\}
 %\]
 
-\subsubsection*{Search Constraints}
+\subsubsection*{Bayesian Search Constraints}
 
 For each GPU type \( t \in T \), we enforce that the total number of GPUs allocated across all \( K \) slots does not exceed the inventory \( I_t \):
 \[
@@ -146,7 +146,7 @@ Finally, \(I_{\text{min}}\) specifies the minimum number of GPUs that any island
     \centering
     \includegraphics[width=\textwidth]{divider_skew_effects_overlay_islands.pdf}
     \caption[Graph displaying the effect of changing the \(S_{\text{skew}}\) value]
-    {Graph displaying the effect of changing the \(S_{\text{skew}}\) value where \(G_{\text{total}}=100\) and \(N_{\text{target}}=5\).}
+    {Graph displaying the effect of changing the \(S_{\text{skew}}\) value where \(G_{\text{total}}=100\) and \(N_{\text{target}}=5\). Instances with high skew values (absolute), display higher island size variance.}
     \label{fig:04-skew-changes}
 \end{figure}
 
@@ -178,52 +178,33 @@ Otherwise we can distribute the remaining GPUs using the \(S_{\text{skew}}\)valu
 
 We first compute a weight $w_k$ for each island $k$, where $k$ ranges from $1$ to $N_{\text{actual}}$, computed as $w_k = k^{S_{\text{skew}}}$.
 However, if $S_{\text{skew}}$ is numerically close to zero, each island is given an equal weight of $w_k = 1.0$.
-These weights are then normalised so that we can derive proportions $p_k$, indicating each island's share of the remaining GPUs. The sum of the weights is computed as
+These weights are then normalised so that we can derive proportions \( p_k \), indicating each island's share of the remaining GPUs. Each proportion is determined by dividing the weight of an island by the weight sum:
 \[
-W_{\text{sum}} = \sum_{j=1}^{N_{\text{actual}}} w_j.
+\begin{aligned}
+W_{\text{sum}} &= \sum_{j=1}^{N_{\text{actual}}} w_j, \quad &
+p_k &= \frac{w_k}{W_{\text{sum}}}.
+\end{aligned}
 \]
-%If $W_{\text{sum}} \leq 0$, which may occur due to numerical errors or degenerate inputs, all islands are assigned equal proportions, $p_k = \frac{1}{N_{\text{actual}}}$. Otherwise, 
-Each proportion is determined by dividing the weight of an island by the weight sum:
-\[
-p_k = \frac{w_k}{W_{\text{sum}}}.
-\]
-Using these proportions, we compute the ideal (possibly fractional) allocation $s_k^{\text{ideal}}$ for each island:
-\[
-s_k^{\text{ideal}} = p_k \cdot G_{\text{remaining}}.
-\]
+
+Using these proportions, we compute the ideal (possibly fractional) allocation $s_k^{\text{ideal}}$ for each island: \(s_k^{\text{ideal}} = p_k \cdot G_{\text{remaining}}\).
 
 \subsubsection{Integer Adjustment}
 
 Because GPUs can only be allocated in integer units, we use the largest remainder method to convert the fractional allocations into integers.
-First, each island $k$ is provisionally assigned a base number of GPUs:
+First, each island $k$ is provisionally assigned a base number of GPUs: \(s_k^{\text{base\_int}} = \left\lfloor s_k^{\text{ideal}} \right\rfloor\).
+%The current island sizes (initialised to $I_{\text{min}}$) are then increased by these integer allocations.
+We need to computed the discrepancy between the total allocated GPUs and the intended $G_{\text{remaining}}$ . This discrepancy,
 \[
-s_k^{\text{base\_int}} = \left\lfloor s_k^{\text{ideal}} \right\rfloor.
+D = \text{round} \left( G_{\text{remaining}} - \sum_{j=1}^{N_{\text{actual}}} s_j^{\text{base\_int}} \right),
 \]
-The current island sizes (initialised to $I_{\text{min}}$) are then increased by these integer allocations.
+represents the number of GPUs that are still unassigned due to rounding down the fractional values.
+To distribute the $D$ leftover GPUs, we calculate the fractional part for each island as \(f_k = s_k^{\text{ideal}} - s_k^{\text{base\_int}}\), and identify the $D$ islands with the largest fractional parts. Each of these selected islands receives one additional GPU.
 
-%\todo{
-%
-%Next, the discrepancy between the total allocated GPUs and the intended $G_{\text{remaining}}$ is computed. This discrepancy,
-%\[
-%D = \text{round} \left( G_{\text{remaining}} - \sum_{j=1}^{N_{\text{actual}}} s_j^{\text{base\_int}} \right),
-%\]
-%represents the number of GPUs that are still unassigned due to rounding down the fractional values. To distribute the $D$ leftover GPUs, we calculate the fractional part for each island as
-%\[
-%f_k = s_k^{\text{ideal}} - s_k^{\text{base\_int}},
-%\]
-%and identify the $D$ islands with the largest fractional parts. Each of these selected islands receives one additional GPU.
-%
-%At the end of this process, each island has a final size given by
-%\[
-%S_k = I_{\text{min}} + s_k^{\text{base\_int}} + \delta_k,
-%\]
-%where $\delta_k \in \{0, 1\}$ depending on whether the island received an extra GPU during the discrepancy distribution. The total sum of all final island sizes equals $G_{\text{total}}$, satisfying the constraint that all available GPUs are used. The function returns this list of $N_{\text{actual}}$ island sizes as the result of the procedure.
-%
-%}
+At the end of this process, each island has a final size given by \(S_k = I_{\text{min}} + s_k^{\text{base\_int}} + \delta_k\), where $\delta_k \in \{0, 1\}$ depending on whether the island received an extra GPU during the discrepancy distribution.
+The total sum of all final island sizes equals $G_{\text{total}}$, satisfying the constraint that all available GPUs are used.
+The function returns this list of $N_{\text{actual}}$ island sizes as the result of the procedure.
 
-
-\clearpage
-\subsubsection*{Search Parameters}
+\subsubsection*{Beysian Search Parameters}
 
 \begin{itemize}
     \item \( T \): the set of GPU types, e.g., \( T = \{\text{A100}, \text{V100}, \ldots\} \)
@@ -236,6 +217,7 @@ The current island sizes (initialised to $I_{\text{min}}$) are then increased by
 
 These two parameters (\( n_t \) and \( s_t \)) define the entire resource distribution strategy, allowing the Bayesian Optimisation process to search over high-level allocation patterns while implicitly satisfying inventory constraints by design.
 
+\clearpage
 \subsubsection*{Implementation}
 
 \todo{
