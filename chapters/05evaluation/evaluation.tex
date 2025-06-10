@@ -11,25 +11,56 @@ We specifically investigate, for a given GPU budget, whether a heterogenous clus
 The goal is to demonstrate that heterogenous clusters are still more cost efficient than homogenous ones in a MoE environment.
 
 We also investigate the performance of the two different scheduling levels separately, to try understand if both are performing effectively.
-For the inner 
+For the \textit{inner loop} we execute several test cases with pre-defined island sizes on a constant workload, here we evaluate the effectiveness of the linear optimisation function.
+We perform several more test cases on the \textit{outer loop}, investigating how different search parameters affect the scheduling result.
 
-Finally we inspect production workload traces
-that we have used for benchmarking
+Finally we execute several real-world tests on a variety of production workload traces on several different inventories.
+%include an exploration of these traces
 
 % Highlights
 \section{System Performance}
 
-\todo{
-\begin{itemize}
-\item Highlight the performance of the system. 
-\item Describe what makes good performance.
-\item Select a homogenous and heterogenous cases, compare their two throughputs (and cost)
-\end{itemize}
-}
+To answer the core research question, do heterogenous clusters outperform homogeneous clusters in MoE environments  
 
+%\todo{
+%\begin{itemize}
+%\item Highlight the performance of the system. 
+%\item Describe what makes good performance.
+%\item Select a homogenous and heterogenous cases, compare their two throughputs (and cost)
+%\end{itemize}
+%}
+
+\origclearpage
+
+Some text to explain all this...
+
+\begin{table}[ht]
+  \centering
+  % The tabular environment still has 13 columns
+  \begin{tabular}{@{} l l ccc cc cc cc cc @{}}
+    \toprule
+    % Headers are restructured into Code A/B and Conv A/B groups
+    \multirow{2}{*}{Config} & \multirow{2}{*}{Type} & \multicolumn{3}{c}{GPU Inventory} & \multicolumn{2}{c}{Code (A)} & \multicolumn{2}{c}{Conv (A)} & \multicolumn{2}{c}{Code (B)} & \multicolumn{2}{c}{Conv (B)} \\
+    
+    % Cmidrules are adjusted for the new 2-column groups
+    \cmidrule(lr){3-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13}
+    
+    % Sub-headers remain R and D under each group
+    & & H200 & H800 & H20 & R & D & R & D & R & D & R & D \\
+    \midrule
+    
+    % Data rows are unchanged
+    (a) & Heterogeneous & 64  & 64  & 128 & --- & --- & --- & --- & --- & --- & --- & --- \\
+    (b) & Heterogeneous & 32  & 128 & 128 & --- & --- & --- & --- & --- & --- & --- & --- \\
+    (c) & Homogeneous   & 128 & --- & --- & --- & --- & --- & --- & --- & --- & --- & --- \\
+    (d) & Homogeneous   & --- & 256 & --- & --- & --- & --- & --- & --- & --- & --- & --- \\
+    \bottomrule
+  \end{tabular}
+  \caption{GPU inventory configurations with placeholders for performance metrics.}
+  \label{tab:inventory-performance-grouped}
+\end{table}
 
 % inner loop by itself
-\origclearpage
 \section{Inner Loop}
 \label{chap:}
 
@@ -40,27 +71,27 @@ These islands are crafted to show the importance of selecting appropriate island
 \begin{table}[ht]
   \centering
   \small
-  \begin{tabular}{@{} l l l l @{}}
+  \begin{tabular}{@{} l l l @{}}
     \toprule
-    Island                      & GPU Model     & Sizes (Size × Count)                & Cost         \\
+    Island                            & GPU Model      & Sizes (Size × Count)              \\
     \midrule
-    (a) Homogeneous Same Size       & DGX-B300      & 32 × 8                              & —            \\
-    (b) Homogeneous Different Sizes & DGX-B300      & 32 × 2, 16 × 4, 8 × 8, 4 × 16        & —            \\
+    (a) Homogeneous Same Size         & DGX-B300       & 32 × 8                            \\
+    (b) Homogeneous Different Sizes   & DGX-B300       & 32 × 2, 16 × 4, 8 × 8, 4 × 16     \\
     \midrule
     \multirow{4}{*}{(c) Heterogeneous Same Size}
-                                   & DGX-B300      & 32 × 2                              & —            \\
-                                   & Rubin-NVL144  & 32 × 2                              & —            \\
-                                   & H800          & 32 × 2                              & —            \\
-                                   & H20           & 32 × 2                              & —            \\
+                                      & DGX-B300       & 32 × 2                            \\
+                                      & Rubin-NVL144   & 32 × 2                            \\
+                                      & H800           & 32 × 2                            \\
+                                      & H20            & 32 × 2                            \\
     \addlinespace
     \multirow{4}{*}{(d) Heterogeneous Different Sizes}
-                                   & DGX-B300      & 32 × 1, 16 × 1, 8 × 1, 4 × 2         & —            \\
-                                   & Rubin-NVL144  & 32 × 1, 16 × 1, 8 × 1, 4 × 2         & —            \\
-                                   & H200          & 8 × 4, 4 × 8                        & —            \\
-                                   & H20           & 8 × 4, 4 × 8                        & —            \\
+                                      & DGX-B300       & 32 × 1, 16 × 1, 8 × 1, 4 × 2      \\
+                                      & Rubin-NVL144   & 32 × 1, 16 × 1, 8 × 1, 4 × 2      \\
+                                      & H200           & 8 × 4, 4 × 8                      \\
+                                      & H20            & 8 × 4, 4 × 8                      \\
     \bottomrule
   \end{tabular}
-  \caption{GPU island test cases for \textit{inner loop} analysis, with two homogeneous scenarios and two heterogeneous scenarios}
+  \caption{GPU island test cases for \textit{inner loop} analysis, with two homogeneous scenarios and two heterogeneous scenarios.}
   \label{tab:05-gpu-island}
 \end{table}
 

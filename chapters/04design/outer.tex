@@ -95,7 +95,7 @@ By shifting from low-level allocation to higher-level distribution strategies, d
 \subsubsection{Input Variables}
 Let \(G_{\text{total}}\) denote the total number of GPUs available for that type, and let \(N_{\text{target}}\) represent the desired number of islands to create.
 We can allow the actual number of islands may be lower if there are not enough GPUs to satisfy the minimum-size requirement. %CRAP
-The parameter \(S_{\text{skew}}\) controls how any leftover GPUs (after each island has been assigned its minimum) are distributed: when \(S_{\text{skew}}\approx0.0\), the extra GPUs are spread as evenly as possible; if \(S_{\text{skew}}>0.0\), islands with higher indices receive proportionally more of the remainder; and if \(S_{\text{skew}}<0.0\), islands with lower indices receive more.
+The parameter \(S_{\text{skew}}\) controls how any leftover GPUs (after each island has been assigned the minimum) are distributed, shown in \autoref{04-skew-changes}: when \(S_{\text{skew}}\approx0.0\), the extra GPUs are spread as evenly as possible; if \(S_{\text{skew}}>0.0\), islands with higher indices receive proportionally more of the remainder; and if \(S_{\text{skew}}<0.0\), islands with lower indices receive more.
 Finally, \(I_{\text{min}}\) specifies the minimum number of GPUs that any island must contain.
 
 % we repeat this for every GPU type
@@ -112,15 +112,16 @@ Finally, \(I_{\text{min}}\) specifies the minimum number of GPUs that any island
 Initially, we verify that the input parameters meet a series of constraints, if any of these conditions is not met, the procedure raises an error and terminates immediately.
 We require \(I_{\text{min}} > 0\), \(G_{\text{total}}\) and \(N_{\text{target}}\) must be nonnegative.
 Next, we perform trivial checks to assess whether it is possible to create at least one island given the input parameters.
-If \(N_{\text{target}} = 0\), \(G_{\text{total}} = 0\) or \(G_{\text{total}} < I_{\text{min}}\), then no islands are to be created and the function returns the empty set \(\varnothing\).
-Similarly, if , there are insufficient GPUs to form even a single island of size \(I_{\text{min}}\), so the function again returns \(\varnothing\).
+If \(N_{\text{target}} = 0\), \(G_{\text{total}} = 0\) or \(G_{\text{total}} < I_{\text{min}}\), then no islands can be created and the function returns the empty set \(\varnothing\).
+Similarly, if , there are insufficient GPUs to form even a single island of size \(I_{\text{min}}\), the function again returns \(\varnothing\).
 
 \subsubsection{Number of Islands}
 
 To establish how many islands can feasibly be created given the available GPUs and the minimum-size requirement, we first compute \(N_{\text{max\_possible}} = \lfloor G_{\text{total}} / I_{\text{min}} \rfloor\), which represents the maximum number of islands if each island is allocated exactly \(I_{\text{min}}\) GPUs.
-We then set \(N_{\text{actual}} = \min\bigl(N_{\text{target}},\,N_{\text{max\_possible}}\bigr)\), so that the actual number of islands cannot exceed either the user's target or the physical limit imposed by the GPU pool.
+We then set \(N_{\text{actual}} = \min\bigl(N_{\text{target}},\,N_{\text{max\_possible}}\bigr)\), so that the actual number of islands cannot exceed either the user's target or the physical limit from the GPU pool.
 If \(N_{\text{actual}} = 0\), this indicates that even a single island of size \(I_{\text{min}}\) cannot be formed (either because \(N_{\text{target}} = 0\) or because \(G_{\text{total}} < I_{\text{min}}\)), and the function returns the empty set \(\varnothing\).
-Otherwise, \(N_{\text{actual}}\) islands will be created, each initially allocated \(I_{\text{min}}\) GPUs before any further distribution of the remaining GPUs occurs.
+Otherwise, \(N_{\text{actual}}\) islands will be created,
+%each initially allocated with \(I_{\text{min}}\) GPUs before any further distribution of the remaining GPUs occurs.
 
 \subsubsection{Base Allocation}
 
@@ -160,7 +161,7 @@ To distribute the $D$ leftover GPUs, we calculate the fractional part for each i
 
 At the end of this process, each island has a final size given by \(S_k = I_{\text{min}} + s_k^{\text{base\_int}} + \delta_k\), where $\delta_k \in \{0, 1\}$ depending on whether the island received an extra GPU during the discrepancy distribution.
 The total sum of all final island sizes equals $G_{\text{total}}$, satisfying the constraint that all available GPUs are used.
-The function returns this list of $N_{\text{actual}}$ island sizes as the result of the procedure.
+%The function returns this list of $N_{\text{actual}}$ island sizes as the result of the procedure.
 
 \subsubsection*{Beysian Search Parameters}
 
@@ -181,8 +182,8 @@ However, the search space is constructed in a significantly simpler way.
 For each GPU type, only two parameters are created:  \( n_t \) as an integer \texttt{RangeParameter}, and \( s_t \) as a float \texttt{RangeParameter}.
 
 During evaluation, these high-level parameters are passed to the previously described \texttt{divider} function, which generates a final list of integer island sizes.
-This resultant layout is then passed to the same \texttt{inner loop} solver as before to calculate the objective, \texttt{rho\_max}.
+This resultant layout is then passed to the same \textit{inner loop} solver to calculate the objective, \texttt{rho\_max}.
 
 A key advantage of this method's low-dimensional search space (two parameters per GPU type) is that a standard Gaussian Process (GP) model is sufficient for optimisation.
 Hence, this implementation uses the BoTorch \texttt{SingleTaskGP} as the surrogate model.
-We can expect this method to be significantly faster to execute, as compared to the \textit{direct} approach.
+We can expect this method to be significantly faster to execute, as compared to the \textit{direct} approach, whilst also yielding better results.

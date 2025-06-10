@@ -29,6 +29,8 @@
 \usepackage{url}
 %\usepackage{placeins}
 %\usepackage{float}
+  % Required for multi-row cells
+  \usepackage{multirow} 
 
 \let\origclearpage\clearpage
 
@@ -132,7 +134,7 @@ Main chapters (excluding front-matter, references and appendix):
 \contentpages~pages
 (pp~\pageref{firstcontentpage}--\pageref{lastcontentpage})
 
-Main chapters word count: 13282
+Main chapters word count: 13422
 
 Methodology used to generate that word count:
 
@@ -143,7 +145,7 @@ $ make wordcount
 gs -q -dSAFER -sDEVICE=txtwrite -o - \
       -dFirstPage=10 -dLastPage=59 report-submission.pdf | \
    egrep '[A-Za-z]{3}' | wc -w
-13282
+13422
 \end{verbatim}
 \end{quote}
 ]
@@ -186,8 +188,8 @@ for a comparable purpose.
 \listoffigures
 \listoftables
 
+\label{firstcontentpage} % start page count here
 \input{chapters/main.tex}
-
 \label{lastcontentpage} % end page count here
 
 \printbibliography
