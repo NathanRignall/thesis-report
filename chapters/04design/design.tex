@@ -5,34 +5,35 @@
 %This chapter may be called something else\ldots but in general the
 %idea is that you have one (or a few) ``meat'' chapters which describe
 %the work you did in technical detail.
-This chapter outlines the steps taken to design and implement a new heterogeneous scheduler for LLM workloads, with support for Mixture-of-Experts models.
-We begin by outlining the problem description of an LLM scheduler, introducing the terminology used throughout this section. 
+This chapter outlines the steps taken to design and implement a new scheduler for LLM workloads, with support for Mixture-of-Experts models on heterogenous hardware.
+We begin by outlining the problem description of an LLM scheduler, introducing the terminology used throughout the section. 
 
-Next, we outline the choice of simulator, of which can be used for expected throughput workload modelling of the system.
-Using this, we describe objectives for a bounded constraint optimisation problem, as a subset of the overall scheduler.
-Then, we  describe several scheduling assumptions which can be used as optimisation strategies.
+Next, we explain the choice of simulator used for modelling the system's expected throughput for a given workload.
+We then use this simulator to define the objectives for a bounded-constraint optimisation problem, which represents a subset of the overall scheduler.
+Then, we describe several scheduling assumptions that can be used as optimisation strategies in the complete scheduler.
 
-We finish by brining together the workload modelling, objectives, constraint optimisation and assumptions into a single problem formulation.
+We finish by brining together the workload modelling, objectives, constraint optimisation and scheduling assumptions into a single problem formulation.
 Here, we separate the scheduler into a two-stage problem, with an \textit{inner} and \textit{outer} loop.
 The \textit{inner loop} assigns specific workloads to GPU islands using deterministic bin-packing.
-In contrast the \textit{outer loop} performs a heuristic search to find the best inputs for the \textit{inner loop}.
+In contrast the \textit{outer loop} performs a heuristic search to find how best to slit up the GPU inventory into islands.
 Using this formulation we describe the specific design and then implementation of the two loops, in preparation for evaluation and testing.
 
 \section{Problem Description}
 
-The purpose of an LLM scheduler within an inference system is to organise and configure a collection of GPUs for optimal performance.
-We can utilise previous \textit{phase splitting} technology to assign the prefill and decode phases of inference to optimal hardware, given the significant efficiency gains. 
+The purpose of an LLM scheduler within an inference system, is to organise and configure a collection of GPUs for optimal performance.
+We can utilise previous \textit{phase splitting} technology, to assign the prefill and decode phases of inference to optimal hardware, given the significant efficiency gains. 
 
 To create a schedule we must first subdivide a list of GPUs into \textit{islands}, an island is a collection of homogenous GPUs of a given type and size.
-Given a list of islands, we must then assign either prefill or decode work (and configure appropriate parallelism levels with respect to MoE), maximising a defined objective.
-In this case we are optimising for cost efficiency, so throughout / cost is a good metric.
+Presented with a list of islands, we must then assign either prefill or decode work (and configure appropriate parallelism levels with respect to MoE) to these islands, maximising a defined objective.
+In this case we are optimising for cost efficiency, so throughout with respect to cost is a good metric.
 
 The logical architecture of such inference system is displayed in \autoref{fig:04-service-architecture}, where incoming requests are mapped to prefill islands.
 Then, after transferring the (KV) cache, completed prefill requests are sent to the optimum decode island.
+We are developing a new scheduler component for this system.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth,height=5cm]{example-image-a}
+    \includegraphics[width=\textwidth,height=6cm]{example-image-a}
     \caption[Service Architecture]
     {Service Archietcture}
     \label{fig:04-service-architecture}

@@ -8,7 +8,7 @@ These effectively apply heuristics to our problem, that are crafted to simplify 
 \label{chap:prefill-parallelism}
 
 We can assume for a given model and GPU type, there exists an optimal parallelism configuration that is consistent across input sequence lengths.
-Demonstrated in \autoref{fig:04-prefill-throughput-vs-sequence-length} we can see that for all GPUs, $tp=64$ and $dp=1$ is the fastest parallelism configuration for all sequence lengths above 128 tokens.
+Demonstrated in \autoref{fig:04-prefill-throughput-vs-sequence-length} we can see that for all GPUs, $tp=64$ and $dp=1$ is the fastest parallelism configuration, for all sequence lengths above 128 tokens.
 Given we expect the majority of input requests to be over 128 tokens, we can reason that there is an \textit{optimal} GPU prefill configuration for each GPU type.
 
 \begin{figure}[ht]
@@ -43,7 +43,7 @@ Aggregating these deviations over all lengths gives
 &&\text{(weighted by workload distribution)}.
 \end{aligned}
 \]
-Finally, the best overall configuration is chosen as the one minimising the average deviation from the individual best configurations.
+Finally, the best overall configuration is chosen as the one minimising the average deviation from the individual best configurations,
 \[
 c_{\mathrm{prefill}} = \arg\min_{c\in C} \widetilde{\delta}(c).
 \]
@@ -51,7 +51,7 @@ c_{\mathrm{prefill}} = \arg\min_{c\in C} \widetilde{\delta}(c).
 \subsection{Decode Parallelism}
 \label{chap:decode-parallelism}
 
-We can compute the same best configuration for the decode phase, with small modifications to the set of $C$ configurations taking into account mixture-of-experts.
+We can compute the same best configuration for the decode phase, with small modifications to the set of $C$ configurations taking into account Mixture-of-Experts.
 Unlike prefill, \(dp\) (the data-parallelism factor) is not a native parameter of the Shallowsim simulator.
 Instead, we pre-compute how many GPUs to pass to the simulator and then scale the resultant throughput by \(dp\).
 Let \(G\) be the total number of GPUs, \(tp\) tensor parallelism factor, and \(n\) the total number of routed experts in the model.
@@ -90,7 +90,7 @@ Before calculating the best parallelism configuration out of the set, we also ne
 Since we would like to optimise our configuration for overall throughput, we need to maximise the batch size for each input sequence length, such that we remain within the memory constraints of the island.
 Let \(\max\_bs(s; c)\) denote the maximum batch size returned by the simulator for sequence length \(s\) under configuration \(c\).
 We then round down to the nearest multiple of 8 and clamp between 8 and 1024 to keep the batch size aligned to the GPU memory and compute capabilities.
-This ensures efficient hardware utilisation and avoids potential performance degradation caused by unaligned memory access or suboptimal parallelism.
+This ensures efficient hardware utilisation and avoids potential performance degradation caused by unaligned memory access or suboptimal parallelism. %CITE
 
 % Need to explain why doing this for 8 (reference)
 
@@ -126,8 +126,9 @@ c_{\mathrm{decode}} = \arg\min_{c\in C}\widetilde{\delta}_{\mathrm{decode}}(c).
 Shown in \autoref{fig:04-decode-throughput-vs-sequence-length}, for each GPU there is generally a better parallelism configuration for most sequence lengths.
 Unlike prefill, this configuration is not consistent across GPU types, but rather significantly impacted by the GPU specifications.
 % This is because the decode stage can be parallelised with batching 
-Configurations with zero throughput are due to the configuration exceeding the memory capabilities of the cluster.
+Configurations with zero throughput are due to the configuration exceeding the memory capabilities of that island.
 
+% TODO FIX
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{simulator_decode_throughput_vs_seq_len.pdf}
@@ -137,9 +138,7 @@ Configurations with zero throughput are due to the configuration exceeding the m
 \end{figure}
 
 %The graphs of \autoref{fig:04-decode-throughput-vs-sequence-length} also demonstrate the advantages of heterogeneity.
-
 % Add some explanations of the graph 
- 
 % add some graphs of the delta approach, like how the best one is selected
 
 \subsection{Solver Resolution}
@@ -151,7 +150,7 @@ The width of the ranges effectively control the resolution of the solution gener
 
 We partition the sorted list of lengths \(S\) into equally-sized intervals of width \(W\), called \textit{ranges}.
 Rather than measure every \(s_i\), we sample a single representative length from each range at its midpoint.
-With a positive integer width \(W\), we compute the midpoint offset as \(\mathrm{mid} = \left\lfloor \tfrac{W}{2}\right\rfloor\).
+With a positive integer width, we compute the midpoint offset as \(\mathrm{mid} = \left\lfloor \tfrac{W}{2}\right\rfloor\).
 For each integer \(k\) such that \(0 \le k < \lfloor \lvert S\rvert / W\rfloor\), we let 
 \[
 \mathrm{range\_start}_k = k\,W,\quad

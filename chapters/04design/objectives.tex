@@ -11,11 +11,11 @@
 
 Demonstrated in \autoref{chap:simulator-usage}, the Shallowsim simulator has support for estimating the throughput of a single request of a static input sequence and decode length.
 It is highly improbable that an entire workload consists of a single request type, instead we expect a distribution of sequence lengths, as shown in \autoref{chap:workload-modeling}.
-Hence, we need a method to accurately calculate the throughput of a system, with a variety of input sequence.
+Hence, we need a method to accurately calculate the throughput of a system, with a variety of input sequence lengths.
 
 Using the probability distribution of the workload, we can compute the weighted average of throughput, using measured performance values for each sequence length.
 Let $R_{\text{prefill}}(s)$ denote the measured prefill throughput (in requests per second) for a request of sequence length $s$.
-The expected prefill throughput for workload $w$, denoted $\mathbb{E}[R_{\text{prefill}} \mid w]$ (expectation), is then given by:
+The expected prefill throughput for workload $w$, denoted $\mathbb{E}[R_{\text{prefill}} \mid w]$ (expectation), is therefore given by:
 
 \[
 \mathbb{E}[R_{\text{prefill}} \mid w] = \sum_{s \in S} R_{\text{prefill}}(s) \cdot p(s \mid w)
@@ -33,11 +33,10 @@ Given a workload-specific sequence length distribution $p(s \mid w)$, the expect
 
 To account for the complete request processing pipeline, we define the overall expected throughput as the minimum of the expected prefill and decode throughputs.
 Since requests cannot be served faster than the slowest stage, the effective throughput is bounded by the bottleneck.
-Let $\mathbb{E}[R_{\text{prefill}} \mid w]$ denote the expected prefill throughput for workload $w$, and $\mathbb{E}[R_{\text{decode}} \mid w, d]$ the expected decode throughput for workload $w$ and average decode length $d$.
-The overall expected throughput is given by:
+The overall expected throughput is therefore given by:
 
 \[
-\mathbb{E}[R_{\text{overall}} \mid w, d] = \min\left( \mathbb{E}[R_{\text{prefill}} \mid w],\ \mathbb{E}[R_{\text{decode}} \mid w, d] \right)
+\mathbb{E}[R_{\text{overall}} \mid w, d] = \min\left( \mathbb{E}[R_{\text{prefill}} \mid w],\ \mathbb{E}[R_{\text{decode}} \mid w, d] \right).
 \]
 
 This value represents the effective throughput achievable by the system under the given workload and output length assumptions.
@@ -53,7 +52,7 @@ This value represents the effective throughput achievable by the system under th
 
 \subsection{Throughput Allocation}
 
-Previous calculations assumed that a singular GPU island is contributing to the overall throughput of the system.
+Previous calculations assumed that a singular GPU island is contributing to the overall throughput of the inferance system.
 In reality, we would like to be able to construct several GPU islands and assign each island to a request type it is best suited for.
 Hence, we allocate a percentage of GPU resources for a given island to a given sequence length it specialises in.
 Let \(I\) be the set of all GPU islands in the system, which we partition into two separate subsets \(I_{\mathrm{prefill}}\) and \(I_{\mathrm{decode}}\).

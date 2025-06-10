@@ -1,15 +1,15 @@
 \section{Simulator}
 
 In order to be able to develop an LLM scheduler, we need access to many high-performance GPUs to test our schedule configurations.
-Unfortunately, GPU-hours are prohibitively expensive and using such hours for ``dummy'' workloads to test a scheduler would be considered a waste of resources.
+Unfortunately, GPU-hours are prohibitively expensive and using such hours for ``dummy'' workloads, to test a scheduler, would be considered a waste of resources. %CITE
 Instead, we utilise the latest simulator technology to estimate the performance of LLM inference given a set of input parameters.
-Several simulators exist that attempt to model the performance of an LLM request by using estimation techniques.
+Several simulators already exist that attempt to model the performance of an LLM request by using estimation techniques.
 
 % Previous work has also used schedulers too (reference the work here).
 
 \textbf{Vidur} \autocite{agrawalVidurLargeScaleSimulation2024} is an LLM simulator developed by Microsoft, designed to address the high cost and complexity of experimentally finding the best deployment configuration of LLMs.
 This is achieved by profiling a model-gpu combination for expected throughput on given operations (different prefill and decode requests).
-Then, using a small machine learning model, the system predicts the likely performance with high degrees of accuracy for different prefill configurations.
+Then, using a small machine learning model, the system predicts the likely performance with high degrees of accuracy for different parrallelism configurations.
 
 \textbf{Shallowsim} \autocite{icezack12Icezack12Shallowsim2025} is a specialist simulator designed to estimate the compute times for different LLM request types.
 Specifically built for DeepSeek-V3/R1 models, it has native support for simulating MoE architectures.
@@ -17,15 +17,15 @@ Unlike Vidur, Shallowsim requires no profiling phase, rather a list of device pe
 These metrics are then used to compute the expected performance for the prefill and decode phase separately
 
 We select Shallowsim for its transparency of calculations (simplicity), as it uses no machine learning to predict performance.
-Instead, simple operations are used, which allows us to inspect performance and modify the calculations as necessary.
-The Shallowsim simulator also already has native support for Mixture of Expert models (our key novel design goal).
+Instead, simple mathematical operations are used, which allows us to inspect performance and modify the calculations as necessary.
+The Shallowsim simulator also already has native support for Mixture of Expert models, which is our key novel design goal for the scheduler.
 
 %And requires complex and expensive profiling
 
 \subsection{Shallowsim Implementation}
 
 \todo{
-\textit{This is just describing how shallowsim does its maths, will finish last as it is not strictly necessary for the report}
+\textit{This is just describing how shallowsim does its maths, will finish very last as it is not strictly necessary for the report - Might even include in the appendix if too long.}
 }
 
 %\textbf{Prefill}
@@ -77,10 +77,10 @@ The Shallowsim simulator also already has native support for Mixture of Expert m
 \subsection{Modifactions}
 
 We make several small modifications to the Shallowsim simulator to support our use-case of efficiently profiling system configurations.
-As-built Shallowsim is designed to profile several different parallelism configurations and batch sizes, then report back the overall fastest.
+As-built Shallowsim is designed to profile several different parallelism configurations and batch sizes, then report back the overall fastest configuration.
 We need support for profiling a specific parallelism configuration and batch size, as we may not always be able to use the most optimal for a given exact sequence length, but rather a range of sequence lengths.
 
-To do this, we extract all the mathematical operations present in the existing code and form procedures with specific input parameters, e.g., $\texttt{prefill\_alltoall}(\texttt{gpu}, \texttt{seq\_len}, \texttt{tp\_num})$.
+To do this, we extract all the mathematical operations present in the existing code and form procedures with specific input parameters, e.g., $\texttt{prefill\_a2a}(\texttt{gpu}, \texttt{seq\_len}, \texttt{tp\_num})$.
 Here, we precisely specify the gpu model, input sequence length, and tensor parallelism degree.
 
 Given the modifications, shallowsim now supports the following functions:
@@ -107,7 +107,7 @@ $R_{\text{prefill}} = \frac{1000}{t}$.
 \subsubsection{Decode Phase}
 Shallowsim has support for calculating the time in milliseconds for a single token generation step.
 As we would typically expect several tokens to be generated, we cannot directly compute requests per second using Shallowsim, instead we must perform additional computations.
-The decode time of a single token is affected by the input/current sequence length, therefore we must measure the single token compute time for every token to be generated.
+The decode time of a single token is affected by the input/current sequence length, therefore we must measure the single token compute time for every token to be generated in a request.
 
 % graph of sequence length affecting decode time
 

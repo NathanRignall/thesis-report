@@ -6,7 +6,8 @@ The \textit{inner loop} receives an island layout proposal from the \textit{oute
 Here, \(t_{i}\in T\) denotes the GPU type assigned to island \(i\), and \(s_{i}\in \mathbb{Z}_{\ge 0}\) indicates the number of GPUs of type \(t_{i}\) allocated to that island.
 The \textit{outer loop} guarantees that these allocations respect the total-inventory constraints.
 
-Given the predefined island layout \(\bigl\{(t_{j},s_{j})\bigr\}_{j=1}^{|\mathcal{I}|}\), the inner loop's only task is to assign workloads of different prefill and decode lengths.
+% \(\bigl\{(t_{j},s_{j})\bigr\}_{j=1}^{|\mathcal{I}|}\)
+Given the predefined island layout, the \textit{inner loop's} only task is to assign workloads of different prefill and decode lengths.
 No further modification of \(t_{i}\) or \(s_{i}\) takes place at this stage, as the inner loop focuses entirely on determining the optimal bin-packing configuration.
 
 We can outline the steps of the \textit{inner loop} as follows: 
@@ -40,17 +41,18 @@ We can outline the steps of the \textit{inner loop} as follows:
 \end{figure}
 
 % Many linear solution
-\clearpage
+\origclearpage
 \subsection{Constraint Formulation}
 \label{chap:linear-problem}
 
 We take the non-linear problem formulation from \autoref{chap:constraint-optimisation}, which contained ratios such as \(\sigma_s = R_s / R\), and transform it into an entirely linear program by introducing auxiliary variables and linear constraints.
-In parallel, we incorporate the ``range'' abstraction from \autoref{chap:resolution} so that instead of summing over every sequence length, we only sum over a small set of ranges \(J\).
+We then incorporate the ``range'' abstraction from \autoref{chap:resolution} so that instead of summing over every sequence length, we only sum over a small set of ranges \(J\).
 We also modify the problem to contain assignment variables (\(x\) values) for both prefill and decode.
 The result is a single, linearised load-balancing problem that jointly optimises prefill and decode throughput.
 
 % Do I also need to add in here about the assumption that the benchmark stage has been completed?
 
+% KEY CHECK - include definition for target proportion p
 \subsubsection{Linearisation Steps}
 In the original non-linear problem, each range's achieved share \(\sigma_j\) involved dividing by the total throughput \(R\), (\(\sigma_j = R_j / R\)).
 We avoid division by introducing one auxiliary variable per range and enforcing deviations through linear inequalities:
@@ -217,15 +219,17 @@ We implement this constraint optimisation problem using \texttt{pulp}, a linear 
 Given our problem uses both integer ($z$ assignment variables) and float ($x$ load variables), we need to use a Mixed-Integer Linear Programming Solver (MILP).
 The mixed-integer nature worsens the solve performance but allows for the dynamic selection of which islands are provisioned for prefill and decode.
 
+% TODO - Add why this is good.
+
 \subsection{Optimisation}
 
 Given the \textit{inner loop} will be executed several times by the \textit{outer loop} during optimisation, we can improve performance through caching various results.
 
-First, we can cache the \textbf{Formulate Ranges} step by recording the computed range values in a dictionary with the workload $w$ and bin width.
+First, we can cache the \textbf{Formulate Ranges} step by recording the computed range values in a dictionary with the bin width $W$.
 For each execution of \textit{inner loop}, these values will be constant so caching prevents unnecessary re-computation.
 
 Second we can cache the \textbf{Prefill Configuration Generation \& Benchmark} process for islands of the same type and size.
-For a constant workload, we can expect the prefill configuration and benchmark output to be constant for the same given the same island size and type.
+For a constant workload, we can expect the prefill configuration and benchmark output to be constant for the same island size and type.
 The proposed island size-type combination will likely repeat several hundred times in the optimisation process, saving significant compute time.
 
 Third, we can complete the same caching for the \textbf{Decode Configuration Generation \& Benchmark} step.
@@ -233,13 +237,11 @@ This step is executed during every iteration, like prefill, so we can expect equ
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth,height=6cm]{example-image-a}
+    \includegraphics[width=\textwidth,height=7cm]{example-image-a}
     \caption[Diagram or graph showing affect of caching]
     {Diagram or graph showing effect of caching.}
     \label{fig:04-inner-loop-cache}
 \end{figure}
-
-\clearpage
 
 % THIS IS USEFUL TEXT - BUT BETTER FOR LATER - NOT SURE IF EVEN NEEDED
 

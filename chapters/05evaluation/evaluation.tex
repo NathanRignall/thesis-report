@@ -20,11 +20,11 @@ that we have used for benchmarking
 \section{System Performance}
 
 \todo{
-Some graphs to highlight the performance of the system
-
-Describe what makes good performance
-
-Select a homogenous case (with pricing) and heterogenous (with pricing). compare their two throughputs.
+\begin{itemize}
+\item Highlight the performance of the system. 
+\item Describe what makes good performance.
+\item Select a homogenous and heterogenous cases, compare their two throughputs (and cost)
+\end{itemize}
 }
 
 
@@ -169,78 +169,75 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 \todo{
 \begin{itemize}
 \item Test setup.
-\item Test approach (repeat 10 times).
+\item Test approach.
+\item How to read the graphs (explain for all future sections).
 \end{itemize}
 }
 
 % Batch Size
 \subsection{Batch Size Analysis}
 
-\todo{
-\begin{itemize}
-\item How batch size influences results (variance).
-\item Solution achieved in 20 iterations.
-\end{itemize}
-}
+\begin{quote}
+``How does changing the batch size, of solutions tested at each iteration, affect the results of the Bayesian Optimisation outer loop?''
+\end{quote}
 
-%Explain \autoref{fig:05-batch-analysis}
+Text to explain \autoref{fig:05-batch-analysis}.
+
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{outer_batch_error_area.pdf}
-    \caption[Batch Size Analysis]
-    {Batch Size Analysis}
+    \caption[Throughput per iteration number for different batch sizes.]
+    {Throughput per iteration number for different batch sizes. \textbf{Experiment Parameters:} iterations = $20$, trials = $10$, min island size = $2$, skew range = $\pm 5.0$.}
     \label{fig:05-batch-analysis}
 \end{figure}
 
-\todo{
-\begin{itemize}
-\item How long on average to best solution.
-\end{itemize}
-}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.4\textwidth]{outer_batch_deltas.pdf}
-    \caption[Batch Size Analysis (Time)]
-    {Batch Size Analysis (Time)}
-    \label{fig:05-batch-deltas}
-\end{figure}
+%\todo{
+%\begin{itemize}
+%\item How long on average to best solution.
+%\end{itemize}
+%}
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=0.4\textwidth]{outer_batch_deltas.pdf}
+%    \caption[Batch Size Analysis (Time)]
+%    {Batch Size Analysis (Time)}
+%    \label{fig:05-batch-deltas}
+%\end{figure}
 
 % Skew
 \origclearpage
-\subsection{Skew Analysis}
+\subsection{Skew Range Analysis}
 
-\todo{
-\begin{itemize}
-\item How changing the search params (skew) affects solution.
-\end{itemize}
-}
+\begin{quote}
+``How does changing the range of the skew search parameter affect the results of the outer loop whilst using the divider approach?''
+\end{quote}
+
+Text to explain \autoref{fig:05-skew-analysis}.
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{outer_skew_error_area.pdf}
-    \caption[Skew Analysis]
-    {Skew Analysis}
+    \caption[Throughput per iteration number for different skew ranges (Divider BO)]
+    {Throughput per iteration number for different skew ranges (Divider BO). \textbf{Experiment Parameters:} batch size = $8$, iterations = $20$, trials = $10$, minimum island size = $2$}
     \label{fig:05-skew-analysis}
 \end{figure}
 
-% Skew
-\subsection{Number of Islands}
+% Islands
+\subsection{Minimum Island Size Analysis}
 
-\todo{
-\begin{itemize}
-\item How changing the search params (number of islands) affects solution.
-\end{itemize}
-}
+\begin{quote}
+``How does changing the minimum number of GPUs in an island affect the results of the in outer loop whilst using the divider approach?''
+\end{quote}
+
+Text to explain \autoref{fig:05-min-island-analysis}.
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{outer_island_error_area.pdf}
-    \caption[Min Island Analysis]
-    {Min Island Analysis}
+    \caption[Throughput per iteration number for different minimum island sizes (Divider BO)]
+    {Throughput per iteration number for different minimum island sizes (Divider BO). \textbf{Experiment Parameters:} batch size = $8$, iterations = $20$, trials = $10$, skew range = $\pm 5.0$.}
     \label{fig:05-min-island-analysis}
 \end{figure}
-
 
 
 % outer loop + inner loop
@@ -250,45 +247,60 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 \todo{
 \begin{itemize}
 \item Test setup.
-\item Test approach (repeat 10 times).
+\item Test approach.
 \end{itemize}
 }
 
+\subsection{Batch Size Analysis}
 
-\subsection{SAASBO Implementation}
+\begin{quote}
+``How does changing the batch size, of solutions tested at each iteration, affect the results of the outer loop whilst using the direct approach?''
+\end{quote}
+
+Text to explain \autoref{fig:05-direct-saasbo-batch-analysis}.
+
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{outer_old_saasbo_error_area.pdf}
-    \caption[Direct SAASBO Batch Size Analysis]
-    {Direct SAASBO Batch Size Analysis}
+    \caption[Throughput per iteration number for different batch sizes (Direct SAASBO)]
+    {Throughput per iteration number for different batch sizes (Direct SAASBO). \textbf{Experiment Parameters:} iterations = $10$, trials = $5$, k slots = $16$}
     \label{fig:05-direct-saasbo-batch-analysis}
 \end{figure}
+
+Text to explain \autoref{fig:05-direct-bo-batch-analysis}.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{outer_old_bo_error_area.pdf}
+    \caption[Throughput per iteration number for different batch sizes (Direct BO)]
+    {Throughput per iteration number for different batch sizes (Direct BO). \textbf{Experiment Parameters:} iterations = $10$, trials = $5$, k slots = $16$}
+    \label{fig:05-direct-bo-batch-analysis}
+\end{figure}
+
+\origclearpage
+\subsection{K Slots Analysis}
+
+\begin{quote}
+``How does changing K slots value, of solutions tested at each iteration, affect the results of the outer loop whilst using the direct approach?''
+\end{quote}
+
+Text to explain \autoref{fig:05-direct-saasbo-kslots-analysis}.
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{outer_old_saasbo_kslots_error_area.pdf}
-    \caption[Direct SAASBO KSlots Size Analysis]
-    {Direct SAASBO KSlots Size Analysis}
+    \caption[Throughput per iteration number for different K slots (Direct SAASBO)]
+    {Throughput per iteration number for different K slots (Direct SAASBO). \textbf{Experiment Parameters:} batch size = $4$, iterations = $10$, trials = $5$}
     \label{fig:05-direct-saasbo-kslots-analysis}
 \end{figure}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.4\textwidth]{outer_old_saasbo_kslots_deltas.pdf}
-    \caption[Direct SAASBO Batch Size Analysis (Time)]
-    {Direct SAASBO Batch Size Analysis (Time)}
-    \label{fig:05-direct-saasbo-batch-deltas}
-\end{figure}
-
-\origclearpage
-\subsection{BO Implementation}
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\textwidth]{outer_old_bo_error_area.pdf}
-    \caption[Direct BO Batch Size Analysis]
-    {Direct BO Batch Size Analysis}
-    \label{fig:05-direct-bo-batch-analysis}
-\end{figure}
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=0.4\textwidth]{outer_old_saasbo_kslots_deltas.pdf}
+%    \caption[Direct SAASBO Batch Size Analysis (Time)]
+%    {Direct SAASBO Batch Size Analysis (Time)}
+%    \label{fig:05-direct-saasbo-batch-deltas}
+%\end{figure}
 
 % Introduce where the traces have come from
 \origclearpage
@@ -347,7 +359,6 @@ Source \autocite{wangBurstGPTRealworldWorkload2025}
     \label{fig:05-traces-burst-vs}
 \end{figure}
 
- \origclearpage
  \subsection{Results}
  
  \todo{
@@ -365,6 +376,6 @@ Source \autocite{wangBurstGPTRealworldWorkload2025}
 %\end{itemize}
 %}
 
-\section{Discussion}
-
-(if required - may merge this with the heterogenous vs homogenous)
+%\section{Discussion}
+%
+%(if required - may merge this with the heterogenous vs homogenous)

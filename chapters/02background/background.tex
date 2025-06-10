@@ -2,7 +2,7 @@
 
 \chapter{Background}
 
-Within this Chapter we introduce the concepts behind transformer models, their associated computing steps and the different phases of inference.
+Within this Chapter we introduce the concepts behind transformer models, their associated computational steps and the different phases of inference.
 %such that we can understanding optimisatoion
 We also introduce several technologies which can be used for building schedulers in computer systems.
 
@@ -29,27 +29,26 @@ Such attention is calculated by adding positional encodings to input embeddings 
 %Some model architectures also use multi-head attention, where multiple query, key and value vectors are calculated. 
 
 The first transformer models were designed for encoder-decoder tasks such as translation, where an input sequence is encoded and decoded to an output sequence \autocite{lewisBARTDenoisingSequencetoSequence2019}.
-The encoder processes the entire input sequence and produces contextualised hidden representations of the text.
+The encoder processes the input sequence and produces contextualised hidden representations of the text.
 Subsequently, the decoder generates output tokens one by one, using masked self-attention to prevent access to future tokens during generation \autocite{vaswaniAttentionAllYou2023}.
 Encoder-only models are typically used for classification and sentence embeddings \autocite{devlinBERTPretrainingDeep2019}, whereas decoder-only are often used for autoregressive generation (chatbots, coding assistants) \autocite{radfordImprovingLanguageUnderstanding}.
 
-Transformers form the basis of modern natural language processing due to their scalability, parallelisation benefits, and excellent performance on long-range dependencies.
+Transformers form the basis of modern natural language processing due to their scalability, parallelisation benefits, and excellent performance on long input sequences.
 An LLM, or Large Language Model, is a type of transformer model that has been trained on a massive amount of text data.
-Their ``large'' size refers to the vast number of parameters they contain, which is key factor in their ability to capture complex patterns in natural language.
+Their ``large'' size refers to the vast number of parameters they contain, which is key factor in their ability to capture complex patterns in natural language. %CITE
 
 \subsection{Computation Steps}
-There are several computation steps involved in a Transformer model's forward pass during inference.
+There are several computation steps involved in a transformer model's forward pass during inference.
 The process begins with input embeddings and positional encodings, where each token in the input sequence is converted into a dense vector using a learned embedding matrix.
 Positional encodings are then added to incorporate information about the position of each token in the sequence.
-Next, the model computes the Query (Q), Key (K), and Value (V) vectors for each token by projecting the input embeddings through learned linear transformations.
-Using the Q, K, and V vectors, the model performs scaled dot-product attention to compute attention scores and weigh the significance of other tokens in the sequence relative to each token.
+Next, the model computes the Query (Q), Key (K), and Value (V) vectors for each token, by projecting the input embeddings through learned linear transformations.
+Using the Q, K, and V vectors, the model performs scaled dot-product attention to compute attention scores and weigh the significance of other tokens in the sequence relative to each token. %CITE
 % \autocite{tunstallNaturalLanguageProcessing2022}
 
 The output of the attention mechanism is passed through a residual connection and a layer normalisation step.
-This is followed by a position-wise feed-forward network, which consists of two linear transformations with a ReLU activation (or GELU in some models) in between, applied independently to each position.
-In deep Transformer models, these components (attention, residual connection, normalisation, and feed-forward layers) are stacked multiple times.
-The output of one layer serves as the input to the next.
-Finally, the output of the last Transformer layer is passed through a linear projection layer to produce the final output, depending on the task.
+This is followed by a position-wise feed-forward network, which consists of two linear transformations with a ReLU activation (or GELU in some models) in between.
+In deep transformer models, these components (attention, residual connection, normalisation, and feed-forward layers) are stacked multiple times, where the output of one layer serves as the input to the next.
+Finally, the output of the last Transformer layer is passed through a linear projection layer to produce the final output, depending on the task. %CITE
 % \autocite{zhangDiveDeepLearning2021}
 
 \subsection{Prefill and Decode}
@@ -57,8 +56,8 @@ Finally, the output of the last Transformer layer is passed through a linear pro
 We can separate the processing phases of LLM model inference steps into two distinct categories, with clear differences in hardware processing requirements.
 
 % Prefill
-The prefill stage processes the input tokens to compute the transformer model's intermediate states.
-This includes calculating the positional embeddings and populating the KV cache, which are subsequently used to generate the first new token \autocite{shengFlexGenHighThroughputGenerative2023}.
+The prefill stage processes the initial input tokens to compute the transformer model's intermediate states.
+This includes calculating the positional embeddings and populating the (KV) cache, which are subsequently used to generate the first new token \autocite{shengFlexGenHighThroughputGenerative2023}.
 This specific phase is easily parallelised because at every stage of computation (per token) the full input sequence is known.
 Hence, this is viewed as a matrix-matrix operation which can easily saturate a GPUs available compute \autocite{MasteringLLMTechniques2023}.
 \textit{In reference to a transformer's computation steps, all stages are performed for every token in the sequence but can be heavily parallelised.}
@@ -68,17 +67,17 @@ The decode phase generates each output token one at a time, this is because each
 Hence, each token must be calculated sequentially.
 The speed at which the decode phase can execute is heavily dependent on the speed at which weights, keys, values and activations can be loaded into the correct areas of GPU memory.
 This phase usually saturates the memory bandwidth of a GPU before saturating the compute performance \autocite{patelSplitwiseEfficientGenerative2024}.
-\textit{In reference to a transformer's computation steps, all stages are performed, but for only the new token generated - this is due key-value caching.}
+\textit{In reference to a transformer's computation steps, all stages are performed, but for only the new token generated, this is due key-value caching.}
 
-%Diagram of Prefill vs Decode
+% DIAGRAM of Prefill vs Decode
 
 \subsection{Key Value caching}
-Key value caching is an optimisation used during inference steps for transformer-based decoder-only models such as GPT \autocite{radfordImprovingLanguageUnderstanding}.
+Key value caching is an optimisation technique used during the inference steps for transformer-based decoder-only models such as GPT \autocite{radfordImprovingLanguageUnderstanding}.
 This technique avoids recomputing the tensors for each input token for every decode token generated. Instead weights and key values are cached in GPU memory, to be used in the next iteration.
 At each decoding step the Q value of the new token is computed, reusing cached K and V values from earlier tokens in the sequence \autocite{popeEfficientlyScalingTransformer2022}.
 This technique comes at the cost of using more GPU memory, reducing the maximum model size that theoretically could be loaded.
 
-%Diagram of Key Value cache
+% DIAGRAM of Key Value cache
 
 \subsection{Mixture of Experts} 
 
@@ -88,6 +87,8 @@ Unlike dense transformers where all parameters are used for every input, MoE mod
 In a typical MoE transformer layer, a router network determines which experts to activate for each token.
 This is often achieved using top-k routing, where the router selects the top $k$ experts based on a learned score for each input token.
 The selected experts are then applied to the input, and their outputs are combined before passing to the next layer \autocite{lepikhinGShardScalingGiant2020}.
+
+% DIAGRAM of MoE
 
 % How this problem is different for MoE
 \subsection{DeepSeek Architecture}
@@ -105,54 +106,39 @@ V3 is tuned for general conversation, while R1 builds on it with enhanced reason
 % An intro to parallelism strategies
 
 \textbf{Data parallelism} refers to replicating an entire model across multiple processing units, with each replica receiving a different slice of the input data.
-Hence, this technique is generally used to increase throughput of an overall system, especially in batched inference scenarios.
+Hence, this technique is generally used to increase throughput of an overall system, especially in batched inference scenarios. %CITE
 
 \textbf{Model parallelism} involves partitioning the model itself across several processing units, where each device is responsible for a portion of the model's layers or operations.
-This is most helpful when a model cannot fit on a single device, due to memory demand greater than what is available.
+This is most helpful when a model cannot fit on a single device, due to memory demand greater than what is available. %CITE
 
 \textbf{Tensor parallelism} is a specialised form of model parallelism, generally used with large deep learning models.
-Individual tensors are split across multiple devices (rather than whole layers), reducing the communication overhead which may otherwise negatively impact latency.
+%Individual tensors are split across multiple devices (rather than whole layers), reducing the communication overhead which may otherwise negatively impact latency.
+Individual tensors are split across multiple devices (rather than whole layers),  requiring  frequent communication between devices to synchronise the results of the split tensor computations. %CITE
 
 % pipeline parallelism, one common model parallelism strategy used in existing LLM serving frameworks (e.g., vLLM). Pipeline parallelism is mainly used for inter-machine communication, since the pipeline communication cost is much less than tensor and expert parallelism, which is suitable for making use of inter-machine low communication bandwidth.
 
 \textbf{Pipeline Parallelism} is another form of model parallelism, where models are divided layer-wise (sequentially) and inputs are processed in a pipeline.
-This is in contrast to tensor parallelism, which are split within layers and model parallelism which is more coarse grained.
+This is in contrast to tensor parallelism, which are split within layers and model parallelism which is more coarse grained. %CITE
 
-\textbf{Expert Parallelism} occurs when different experts are placed on different processing units and are activated in parallel.
-Some large language models use Mixture of Experts to help improve model performance.
+\textbf{Expert Parallelism} is a technique used to efficiently serve MoE models, it involves placing different experts on different processing units.
+When the routing network selects specific experts for a given input, only those corresponding processing units become active to process the data in parallel.
+This allows for a significant increase in model size without a proportional increase in computation for every input. %CITE
 
-\textbf{Batching} groups multiple inference requests to process them simultaneously, maximising hardware utilisation and overall system throughput.
+\textbf{Batching} groups multiple inference requests together so that they can be processed simultaneously, maximising hardware utilisation and overall system throughput.
 
 \textit{Static batching} accumulates requests until a batch is full or a timeout is reached.
-All requests are processed together and must wait for the slowest one to finish, leading to inefficient GPU usage and higher latency.
+All requests are processed together and must wait for the slowest one to finish, leading to inefficient GPU usage and higher latency. %CITE
 \textit{Continuous batching} is a dynamic method that immediately adds new requests to the batch as soon as others complete.
-This keeps the hardware constantly active, significantly increasing throughput and reducing idle time.
+This keeps the hardware constantly active, significantly increasing throughput and reducing idle time. %CITE
 
 Batching increases throughput at the cost of individual request latency.
-Continuous batching is superior as it offers much higher throughput while also providing lower and more predictable latency
-
-% Why inference is hard
-\section{Inference Challenges}
-\label{chap:inference-challanges}
-
-Inference for LLMs poses significant technical and operational challenges, especially at scale.
-Unlike traditional ML model, where inference is relatively lightweight, LLMs often require billions of parameters to be loaded and operated on for every user request.
-This results in high compute demands and considerable memory pressure, necessitating powerful and costly GPU infrastructure.
-
-LLM Inference workloads also vary significantly depending on the application.
-For example, code generation workloads (e.g., copilots, IDE assistants) tend to have longer sequences and larger context windows, leading to slower decode-heavy operations.
-In contrast, conversational workloads (e.g., chatbots) often involve shorter prompts and more frequent interactions.
-Understanding and modelling these patterns is critical for system-level optimisation and for deploying LLMs in a cost-efficient, scalable manner.
-
-Hence, to manage these complex demands, service operators rely on sophisticated schedulers and orchestration systems. %REF - LLM
-These systems are, responsible for intercepting incoming inference requests, dynamically batching them to maximise throughput, and intelligently assigning them to the most suitable hardware.
-However, platforms typically operate on homogenous hardware to simplify resource management.
+Continuous batching is superior as it offers much higher throughput while also providing lower and more predictable latency. %CITE
 
 % Different technologies to build a scheduler 
 \section{Scheduler Technologies}
 
 Schedulers are a fundamental concept in systems and networking, used in operating systems to cloud computing, to manage and allocate resources among competing tasks.
-In the context of LLM inference, their role is to solve the complex optimisation problem of mapping a high volumes of diverse and unpredictable requests onto GPUs.
+In the context of LLM inference, their role is to solve the complex optimisation problem of mapping a high volumes of diverse and unpredictable requests onto GPUs. %CITE
 A scheduler is the core component of an LLM serving system, implementing the logic for resource assignment that is essential for maximising hardware utilisation and meeting performance goals.
 
 % Heuristic
@@ -221,3 +207,20 @@ Given problems are non-linear, it is harder to guarantee a globally optimal solu
 %\textbf{Mixed Integer Programming (MIP)} is...
 %
 %}
+
+% Why inference is hard
+\section{Inference Challenges}
+\label{chap:inference-challanges}
+
+Inference for LLMs poses significant technical and operational challenges, especially at scale.
+Unlike traditional ML model, where inference is relatively lightweight, LLMs often require billions of parameters to be loaded and operated on for every user request.
+This results in high compute demands and considerable memory pressure, necessitating powerful and costly GPU infrastructure. %CITE
+
+LLM Inference workloads also vary significantly depending on the application.
+For example, code generation workloads (e.g., copilots, IDE assistants) tend to have longer sequences and larger context windows, leading to slower decode-heavy operations.
+In contrast, conversational workloads (e.g., chatbots) often involve shorter prompts and more frequent interactions.
+Understanding and modelling these patterns is critical for system-level optimisation and for deploying LLMs in a cost-efficient, scalable manner. %CITE
+
+Hence, to manage these complex demands, service operators rely on sophisticated schedulers and orchestration systems. %REF - LLM
+These systems are, responsible for intercepting incoming inference requests, dynamically batching them to maximise throughput, and intelligently assigning them to the most suitable hardware.
+However, platforms typically operate on homogenous hardware to simplify resource management. %CITE

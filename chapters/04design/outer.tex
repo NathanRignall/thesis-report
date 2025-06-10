@@ -1,11 +1,12 @@
 % STUFF
+\origclearpage
 \section{Outer Solver}
 
-The \textit{outer loop} receives an input inventory, containing a list of GPU types (\(t\in T\)) and quantities (\(n_t\)), represented with the set \(\{\,I_t : t \in T\}\).
+The \textit{outer loop} receives an input inventory, containing a list of GPU types and quantities, represented with the set \(\{\,I_t : t \in T\}\).
 Given the inventory, the \textit{outer loop's} job is to propose new island layouts (\(\mathcal{I}\)), which can be subsequently evaluated by the \textit{inner loop}.
 
 The \textit{inner loop} execution is somewhat expensive, hence a complete grid search would incur significant compute time.
-Instead we use a refined Bayesian Optimisation search method with two different methods for searching, \textit{direct} (\autoref{chap:island-direct} and \textit{divided} (\autoref{chap:island-divide}).
+Instead we use a refined Bayesian Optimisation (BO) search method with two different methods for searching, \textit{direct} (\autoref{chap:island-direct}) and \textit{divided} (\autoref{chap:island-divide}).
 
 \begin{figure}[ht]
     \centering
@@ -18,9 +19,9 @@ Instead we use a refined Bayesian Optimisation search method with two different 
 We select Bayesian Optimisation specifically due to its ability to efficiently explore high-dimensional, expensive‐to‐evaluate spaces with only a few hundred evaluations, rather than the exponential cost of a full grid search.
 By maintaining a surrogate model of the island‐layout performance (gaussian process over layouts), Bayesian Optimisation balances exploration (sampling layouts in poorly understood regions) with exploitation (refining around the current best layouts).
 
-Unlike reinforcement learning, which often requires thousands of interactions to learn a policy, BO is designed for “one‐shot” black‐box optimisation.
+Unlike reinforcement learning, which often requires thousands of samples to learn a policy, BO is designed for “one‐shot” black‐box optimisation. %CITE
 With the correct parameters it can deliver near‐optimal solutions with far fewer simulator calls, minimal hyper-parameter tuning, and strong convergence.
-This applies to our-use case where the \textit{inner loop} and constraint solver is effectively black-box.
+This applies to our-use case where the \textit{inner loop} and constraint optimisation solver is effectively black-box.
 
 % First BO Method
 \subsection{Direct Island Generation}
@@ -40,12 +41,6 @@ This setup provides precise control over how GPUs are grouped, but it also requi
     \item \( I_t \): the total inventory of GPU type \( t \in T \)
 \end{itemize}
 
-%Each parameter \( x_{k,t} \) is bounded:
-%
-%\[
-%x_{g,k} \in \{0, 1, \ldots, I_t\}, \quad \forall t \in T, \; \forall k \in \{1, \ldots, K\}
-%\]
-
 \subsubsection*{Bayesian Search Constraints}
 
 For each GPU type \( t \in T \), we enforce that the total number of GPUs allocated across all \( K \) slots does not exceed the inventory \( I_t \):
@@ -60,7 +55,7 @@ The search space is defined programmatically such that for each GPU type, a fixe
 Each slot is a \texttt{RangeParameter} varying from 0 to the total inventory capacity for that GPU type.
 A \texttt{SumConstraint} is then applied for each GPU type, to ensure that the total number of allocated GPUs across all its slots does not exceed the available inventory.
 
-The optimisation process begins with a warm-start phase, where a small number of valid but randomly generated layouts are evaluated.
+The optimisation process begins with a warm-start phase, where a small number of valid randomly generated layouts are evaluated.
 Following this initialisation, the main optimisation loop begins.
 
 This problem is high-dimensional (\( |T| \times K \)), which can pose a challenge for standard Bayesian optimisation.
@@ -77,8 +72,8 @@ The Bayesian Optimisation process is effectively maximising the system's overall
 
 However, with this direct generation approach, finding a good solution can be challenging.
 This is because even with SAASBO the search space can be vast.
-Additionally, in some scenarios many parameters for the slots may optimally be zero (singular large island), creating a sparse problem that can be difficult for the optimiser to navigate.
-Finally, keeping the total number of GPUs used across the slots below the total inventory count can also be difficult.
+Additionally, in some scenarios many parameters for the slots may be optimally zero (singular large island), creating a sparse problem that can be difficult for the optimiser to propose good layouts.
+Also, keeping the total number of GPUs used across the slots below the total inventory count can also be difficult.
 Without creating a complex custom acquisition function, \texttt{BoTorch} has to reject proposed solutions outside the constraints.
 This causes many proposed solutions to be pruned, which is very inefficient.
 To combat these challenges, we propose the \textit{divider} island generation approach.
@@ -99,7 +94,7 @@ By shifting from low-level allocation to higher-level distribution strategies, d
 
 \subsubsection{Input Variables}
 Let \(G_{\text{total}}\) denote the total number of GPUs available for that type, and let \(N_{\text{target}}\) represent the desired number of islands to create.
-We can allow the actual number of islands may be lower if there are not enough GPUs to satisfy the minimum-size requirement.
+We can allow the actual number of islands may be lower if there are not enough GPUs to satisfy the minimum-size requirement. %CRAP
 The parameter \(S_{\text{skew}}\) controls how any leftover GPUs (after each island has been assigned its minimum) are distributed: when \(S_{\text{skew}}\approx0.0\), the extra GPUs are spread as evenly as possible; if \(S_{\text{skew}}>0.0\), islands with higher indices receive proportionally more of the remainder; and if \(S_{\text{skew}}<0.0\), islands with lower indices receive more.
 Finally, \(I_{\text{min}}\) specifies the minimum number of GPUs that any island must contain.
 
