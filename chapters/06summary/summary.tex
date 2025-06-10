@@ -7,31 +7,57 @@
 %You will generally want to draw some conclusions, and point to
 %potential future work.
 
-\todo{
+%Movitvated by the 
+%
+%Formulation success.
+%
+%Inner loop is great, speedy and more accurate (resolution).
+%
+%Outer loop is good, BO is pretty good
+%
+%Limitations - deep moE understanding
+%
+%Prove the answer to the reserach quesiton 
+%
+%As the only GPU with full prcing models is the H200
+%assumptions 
 
-\begin{itemize}
-	\item Formulation success.
-	\item Inner loop is great, speedy and more accurate (resolution).
-	\item Outer loop is good, BO is pretty good
-	\item Future, include cost into the BO loop, with dynamic inventory
-\end{itemize}
+ Motivated by the significant operational costs of Large Language Model (LLM) inference and the under-explored challenge of optimising Mixture-of-Experts (MoE) models on heterogeneous hardware, this work has developed a novel, two-level scheduling algorithm.
+ Building upon previous work in \textit{phase splitting} \autocite{zhongDistServeDisaggregatingPrefill2024} \autocite{patelSplitwiseEfficientGenerative2024}and \textit{heterogenous serving} \autocite{jiangThunderServeHighperformanceCostefficient2025} \autocite{jiangHexGenGenerativeInference2024} we inetgrate this technology into a MoE environment.
+ Specifically, We explored a new architecture that decouples the problem into two distinct stages: an outer loop for island generation and an inner loop for workload assignment.
 
-}
+We presented an \textit{outer loop} that uses Bayesian Optimisation to efficiently search the complex configuration space, partitioning an inventory of GPUs into optimal homogeneous `islands'.
+For the \textit{inner loop}, we devised and implemented a new linear programming formulation that precisely maps workload ranges, categorised by input sequence length, to the generated islands.
+The linear nature of this solver allows us to map workload at a much higher precision than previous scheduling algorithms, whilst retaining fast performance.
 
-Limitations - deep moE understanding
+We evaluated the scheduling algorithm using our simulation framework, backed by Shallowsim \autocite{icezack12Icezack12Shallowsim2025}, on real-world workload traces.
+This demonstrated that the proposed approach, on a heterogeneous GPU cluster, can achieve a $1.4\times$ throughput improvement over a homogeneous cluster of the equivalent cost.
 
+One limitation of our work is that the evaluation is based solely on simulated performance rather than a physical deployment.
+Also, due to the specialised nature of Shallowsim's \autocite{icezack12Icezack12Shallowsim2025} GPU support, we were unable to preform detailed price-performance comparisons with different cluster types.
+
+%Also limited to demonstrate cost 
+% Do not consider 
+
+\origclearpage
 \section{Future Work}
 
-We have developed a scheduling algorithm and tested using state-of-the-art simulator technology
-Improvements would implement this scheduler in the real-world, using a performant routing solution.
+This report demonstrated the development of a new scheduling algorithm and tested its performance using state-of-the-art simulator technology.
+A natural next step would be to implement this scheduler on a model-serving system, to test with real-world traffic and GPUs.
+This would require the development of a performant request routing solution, that is able to obey the precise output of the workload-aware scheduling algorithm.
 
-\todo{
+%Uses probabilistic models
 
-Also:
+There also exists several areas to add additional features to the scheduling algorithm itself:
+
 \begin{itemize}
-	\item \textbf{Communication Models}
-	\item \textbf{Dynamic Inventory}
-	\item \textbf{Live reschedule - Elastic Serving}
-\end{itemize}
 
-}
+	\item \textbf{Communication Models} - Currently, the communication model between each of the GPUs is modelled naively. We assume that every GPU in the island has a high-bandwidth connection to other GPUs in that island. An expanded scheduler might take a GPU graph as an input, then using the edges as bandwidth, separate the GPUs into the most optimal islands.
+
+	\item \textbf{Dynamic Inventory} - A key advantage of Bayesian Optimisation is that it can be expanded to contain multiple objective variables. Hence, we could modify the scheduler \textit{outer loop} to use a dynamic inventory, where live GPU pricing is fed into the model. Then, given the target throughput distribution and magnitude, the scheduler could select the most optimal GPUs to achieve the task.
+
+	\item \textbf{Live Rescheduling} - The current scheduling algorithm assumes a constant workload and hence a constant GPU arrangement. In reality, it is likely this workload would change over time depending on user demand, future work could expand the scheduler to consider the complexities of live model adjustment. This would introduce the concept of minimal change to the \textit{inner loop} linear solver, where it is preferred that islands do not toggle between prefill and decode.
+%	
+%	\item (Elastic Serving)
+
+\end{itemize}
