@@ -35,7 +35,7 @@ Encoder-only models are typically used for classification and sentence embedding
 
 Transformers form the basis of modern natural language processing due to their scalability, parallelisation benefits, and excellent performance on long input sequences.
 An LLM, or Large Language Model, is a type of transformer model that has been trained on a massive amount of text data.
-Their ``large'' size refers to the vast number of parameters they contain, which is key factor in their ability to capture complex patterns in natural language. %CITE
+Their ``large'' size refers to the vast number of parameters they contain, which is a key factor in their ability to capture complex patterns in natural language. %CITE
 
 \subsection{Computation Steps}
 There are several computation steps involved in a transformer model's forward pass during inference.
@@ -67,7 +67,7 @@ The decode phase generates each output token one at a time, this is because each
 Hence, each token must be calculated sequentially.
 The speed at which the decode phase can execute is heavily dependent on the speed at which weights, keys, values and activations can be loaded into the correct areas of GPU memory.
 This phase usually saturates the memory bandwidth of a GPU before saturating the compute performance \autocite{patelSplitwiseEfficientGenerative2024}.
-\textit{In reference to a transformer's computation steps, all stages are performed, but for only the new token generated, this is due key-value caching.}
+\textit{In reference to a transformer's computation steps, all stages are performed, but for only the new token generated, this is due to key-value caching.}
 
 % DIAGRAM of Prefill vs Decode
 
@@ -94,10 +94,10 @@ The selected experts are then applied to the input, and their outputs are combin
 \subsection{DeepSeek Architecture}
 
 DeepSeek V3 and R1 are both LLMs that share a decoder-only Mixture-of-Experts (MoE) architecture with sparse expert activation, enabling over 670B total parameters while activating only approximately 37B per token.
-Both models support long-context inference (up to 128K tokens) and are trained using FP8 mixed-precision for efficiency.
+Both models support long-context inference (up to 128K tokens) and are trained using FP8 mixed-precision for efficiency \autocite{deepseek-aiDeepSeekR1IncentivizingReasoning2025}.
 
 A key feature of their model architecture is the use of KV cache compression during inference.
-Instead of storing full-precision key and value tensors for each expert, DeepSeek compresses these representations, significantly reducing memory bandwidth and enabling faster decode performance despite the model's massive scale.
+Instead of storing full-precision key and value tensors for each expert, DeepSeek compresses these representations, significantly reducing memory bandwidth and enabling faster decode performance despite the model's massive scale \autocite{deepseek-aiDeepSeekV3TechnicalReport2025}.
 V3 is tuned for general conversation, while R1 builds on it with enhanced reasoning capabilities.
 
 % What different parallelism techniques are available
@@ -138,7 +138,7 @@ Continuous batching is superior as it offers much higher throughput while also p
 \section{Scheduler Technologies}
 
 Schedulers are a fundamental concept in systems and networking, used in operating systems to cloud computing, to manage and allocate resources among competing tasks.
-In the context of LLM inference, their role is to solve the complex optimisation problem of mapping a high volumes of diverse and unpredictable requests onto GPUs. %CITE
+In the context of LLM inference, their role is to solve the complex optimisation problem of mapping a high volume of diverse and unpredictable requests onto GPUs. %CITE
 A scheduler is the core component of an LLM serving system, implementing the logic for resource assignment that is essential for maximising hardware utilisation and meeting performance goals.
 
 % Heuristic

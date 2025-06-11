@@ -122,7 +122,7 @@ By shifting from low-level allocation to higher-level distribution strategies, d
 \subsubsection{Input Variables}
 Let \(G_{\text{total}}\) denote the total number of GPUs available for that type, and let \(N_{\text{target}}\) represent the desired number of islands to create.
 We can allow the actual number of islands may be lower if there are not enough GPUs to satisfy the minimum-size requirement. %CRAP
-The parameter \(S_{\text{skew}}\) controls how any leftover GPUs (after each island has been assigned the minimum) are distributed, shown in \autoref{04-skew-changes}: when \(S_{\text{skew}}\approx0.0\), the extra GPUs are spread as evenly as possible; if \(S_{\text{skew}}>0.0\), islands with higher indices receive proportionally more of the remainder; and if \(S_{\text{skew}}<0.0\), islands with lower indices receive more.
+The parameter \(S_{\text{skew}}\) controls how any leftover GPUs (after each island has been assigned the minimum) are distributed, shown in \autoref{fig:04-skew-changes}: when \(S_{\text{skew}}\approx0.0\), the extra GPUs are spread as evenly as possible; if \(S_{\text{skew}}>0.0\), islands with higher indices receive proportionally more of the remainder; and if \(S_{\text{skew}}<0.0\), islands with lower indices receive more.
 Finally, \(I_{\text{min}}\) specifies the minimum number of GPUs that any island must contain.
 
 % we repeat this for every GPU type

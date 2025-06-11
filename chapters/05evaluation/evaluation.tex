@@ -50,12 +50,12 @@ Shallowsim is specifically designed for DeepSeek, which is currently profiled fo
     \midrule
     
     % Data for B columns is removed from each row
-    (a) & Hetero & 64  & 64  & 128 & $176.4\pm20.0$ & $18.2\pm18.2$ & $\bm{138.4\pm15.8}$ & $5.3\pm9.2$\\
-    (b) & Hetero & 32  & 128 & 128 & $\bm{199.1\pm20.5}$ & $21.6\pm14.5$ & $125.5\pm12.4$ & $45.5\pm45.5$\\
-    (c) & Homo  & 128 & 0 & 0 & $\bm{138.8\pm45.9}$ &  $25.3\pm21.5$ & $\bm{114.1\pm5.1}$ & $7.1\pm9.7$\\
+    (a) & Hetero & 64  & 64  & 128 & $176\pm20$ & $18\pm18$ & $\bm{138\pm16}$ & $5\pm9$\\
+    (b) & Hetero & 32  & 128 & 128 & $\bm{199\pm21}$ & $22pm15$ & $126\pm12$ & $45.5\pm46$\\
+    (c) & Homo  & 128 & 0 & 0 & $\bm{139\pm46}$ &  $25\pm22$ & $\bm{114\pm5}$ & $7\pm10$\\
     \bottomrule
   \end{tabular}
-  \caption{GPU inventory configurations with resultant performance metrics on the Azure LLM dataset for code and conversation. \textbf{Experiment Parameters:} batch size = $16$, iterations = $15$, trials = $5$, min island size = $2$, skew range = $\pm 5.0$.}
+  \caption[GPU inventory configurations with resultant performance metrics on the Azure LLM dataset for code and conversation.]{GPU inventory configurations with resultant performance metrics on the Azure LLM dataset for code and conversation. \textbf{Experiment Parameters:} batch size = $16$, iterations = $15$, trials = $5$, min island size = $2$, skew range = $\pm 5.0$.}
   \label{tab:inventory-performance-grouped}
 \end{table}
 
@@ -111,7 +111,7 @@ This is due to the decode phase requiring more memory to execute, hence not all 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{inner_benchmark_all_inventories.pdf}
-    \caption[Benchmark results for every island test case] 
+    \caption[Prefill and decode benchmark results for test case] 
     {Prefill and decode benchmark results for test case, each colour represents a different island in the configuration.}
     \label{fig:05-inner-benchmark}
 \end{figure}
@@ -128,7 +128,7 @@ Also, for all scenarios, one large island is generally allocated for decode and 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{inner_assignment_all_inventories.pdf}
-    \caption[Assignment values percentage (per range) for each every island test case]
+    \caption[Assignment values percentage (per range) for each island test case]
     {Assignment values percentage (per range) for each island test case, using artificial workload as described in \autoref{fig:04-sample-prefill-pdf}}
     \label{fig:05-inner-assignment}
 \end{figure}
@@ -160,41 +160,21 @@ We also include the workload \textit{trace} as a reference to what the target th
 \end{figure}
 
 
-%display how the resolution impacts the solution
+Displayed in \autoref{fig:05-inner-trace-throughput}, the linear optimisation precisely maps work from the input trace to the GPUs.
+However, for all but experiment (d), the prefill and decode phase throughputs are miss-aligned (diverging).
+This is because the islands provided do not have a `naturally' aligning solution, due to their shape and size it is impossible to perfectly allocate prefill and decode, given they cannot be mixed.
+ We can expect the outer optimiser to solve this issue, as it will be able to perfectly allocate island sizes. 
 
-%describe the graphs, like why each graph is different 
-
-
-%a plot of the throughput against cost for each island test case (show why heterogenous is better)
-
+The oscillation displayed between expected and model throughput is expected, this is because the model executes at a lower resolution.
+Hence any throughput allocations will likely be over allocated for sequence lengths shorter than the midpoint, but under allocated for longer lengths.
 
 \subsubsection{Evaluator Method}
 The true throughput is calculated by first benchmarking each exact sequence length (whilst also selecting the best parallelism configuration), for each island using the same method as described in \autoref{chap:inner-loop}.
 Then, the throughputs are weighted with the $p$ value of each sequence length $s$ along with the island percentage allocation $x$, of the range the sequence length resides within.
 
-\subsection{Summary}
-
-\todo{What the results show.}
-
-%% resolution
-%\subsection{Resolution Impact}
+%\subsection{Summary}
 %
-%\todo{
-%\begin{itemize}
-%\item To Complete.
-%\item How resolution impacts solution quality vs time.
-%\end{itemize}
-%}
-%
-%% resolution
-%\subsection{Objective Impact}
-%
-%\todo{
-%\begin{itemize}
-%\item To Complete. 
-%\item How the objective function has been tuned.
-%\end{itemize}
-%}
+%\todo{What the results show.}
 
 % outer loop + inner loop
 \origclearpage
@@ -268,14 +248,15 @@ Hence, we use the full $\pm5.0$ skew range in the main scheduler due to its impr
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{outer_skew_error_area.pdf}
-    \caption[Throughput per iteration number for different skew ranges (Divider BO)]
-    {Throughput per iteration number for different skew ranges (Divider BO). \textbf{Experiment Parameters:} batch size = $8$, iterations = $20$, trials = $10$, minimum island size = $2$}
+    \caption[Throughput per iteration number for different skew ranges (Divider)]
+    {Throughput per iteration number for different skew ranges (Divider). \textbf{Experiment Parameters:} batch size = $8$, iterations = $20$, trials = $10$, minimum island size = $2$}
     \label{fig:05-skew-analysis}
 \end{figure}
 
 % Islands
 \origclearpage
 \subsection{Minimum Island Size Analysis}
+\label{chap:min-size}
 
 \begin{quote}
 ``How does changing the minimum number of GPUs in an island affect the results of the in outer loop whilst using the divider approach?''
@@ -292,21 +273,21 @@ While we would likely see performance gains with a minimum size of one, this par
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{outer_island_error_area.pdf}
-    \caption[Throughput per iteration number for different minimum island sizes (Divider BO)]
-    {Throughput per iteration number for different minimum island sizes (Divider BO). \textbf{Experiment Parameters:} batch size = $8$, iterations = $20$, trials = $10$, skew range = $\pm 5.0$.}
+    \caption[Throughput per iteration number for different minimum island sizes (Divider)]
+    {Throughput per iteration number for different minimum island sizes (Divider). \textbf{Experiment Parameters:} batch size = $8$, iterations = $20$, trials = $10$, skew range = $\pm 5.0$.}
     \label{fig:05-min-island-analysis}
 \end{figure}
 
-\subsection{Summary}
-
-\todo{What have we learnt.}
+%\subsection{Summary}
+%
+%\todo{What have we learnt.}
 
 % outer loop + inner loop
 \section{Outer Loop (Direct Approach)}
 
 We also test the \textit{outer loop} in \textit{direct} mode, to demonstrate the performance relative to the \textit{divider} island generation approach.
 These experiments use the exact same experiment setup, input inventory and workload trace as of \autoref{chap:eval-outer-divider}.
-While these experiments are less useful 
+We use these experiments to analyse the difference in performance between the standard BO and SAASBO optimisers.
 
 \subsection{Batch Size Analysis}
 
@@ -314,7 +295,9 @@ While these experiments are less useful
 ``How does changing the batch size, of solutions tested at each iteration, affect the results of the outer loop whilst using the direct approach?''
 \end{quote}
 
-Text to explain \autoref{fig:05-direct-saasbo-batch-analysis}...
+We first test using the SAASBO Bayesian Optimisation approach.
+\autoref{fig:05-direct-saasbo-batch-analysis} displays that for every increase in batch size, throughput also improves, at the cost of higher variance.
+Comparing against the \textit{direct} island generation performance, this approach performs significantly worse, with maximum throughput values of just 300 requests/s.
 
 \begin{figure}[ht]
     \centering
@@ -324,8 +307,10 @@ Text to explain \autoref{fig:05-direct-saasbo-batch-analysis}...
     \label{fig:05-direct-saasbo-batch-analysis}
 \end{figure}
 
-Text to explain \autoref{fig:05-direct-bo-batch-analysis}...
-Only execute for 2,4,8 as 16 too big
+We also complete the same analysis of the \textit{direct} island generation approach whilst using standard Bayesian Optimisation.
+Surprisingly \autoref{fig:05-direct-bo-batch-analysis} performs better (faster convergence) than the SAASBO approach of \autoref{fig:05-direct-saasbo-batch-analysis}.
+Furthermore the BO approach executes significantly faster than the SAASBO, \autoref{fig:05-batch-deltas-comparison}.
+Whilst the \textit{direct} generation approach is categorically worse, it is interesting to observe that SAASBO is not necessarily required on such high dimensionality optimisation.
 
 \begin{figure}[ht]
     \centering
@@ -334,8 +319,6 @@ Only execute for 2,4,8 as 16 too big
     {Throughput per iteration number for different batch sizes (Direct BO). \textbf{Experiment Parameters:} iterations = $10$, trials = $5$, k slots = $16$}
     \label{fig:05-direct-bo-batch-analysis}
 \end{figure}
-
-Info on time... suprising... \autoref{fig:05-batch-deltas-comparison}
 
 \begin{figure}[ht]
     \centering
@@ -353,7 +336,12 @@ Info on time... suprising... \autoref{fig:05-batch-deltas-comparison}
 ``How does changing K slots value, of solutions tested at each iteration, affect the results of the outer loop whilst using the direct approach?''
 \end{quote}
 
-Text to explain \autoref{fig:05-direct-saasbo-kslots-analysis}...
+We perform one last experiment to try understand the behaviour of the \textit{divider} island generation approach.
+Specifically, we adjust the k slots variable (variable responsible for the high dimensionality of this approach).
+
+Displayed in \autoref{fig:05-direct-saasbo-kslots-analysis}, as k slots increases so does performance, at the cost of significantly higher variance.
+As demonstrated in \autoref{chap:min-size} more small islands are better for prefill performance.
+Hence, increasing k slots improves performance, but with the downside of exploding dimensionality.
 
 \begin{figure}[ht]
     \centering
@@ -363,29 +351,17 @@ Text to explain \autoref{fig:05-direct-saasbo-kslots-analysis}...
     \label{fig:05-direct-saasbo-kslots-analysis}
 \end{figure}
 
-\subsection{Summary}
-
-\todo{What have we learnt.}
-
 % Introduce where the traces have come from
-\origclearpage
-\section{Real-World}
-
-\todo{
-\begin{itemize}
-\item End-to-end analysis with real-world traces.
-\item Pick several different inventories
-\end{itemize}
-}
-
-\subsection{Traces}
+\section{Workload Traces}
 \graphicspath{{chapters/04design/graphs}}
 \label{chap:traces}
 
 % The main set of traces (Azure LLM)
 \subsubsection{Azure LLM}
 
-Explain source \autocite{stojkovicDynamoLLMDesigningLLM2024}...
+We use the Azure LLM \autocite{stojkovicDynamoLLMDesigningLLM2024} workload traces for our experiments with the developed scheduler.
+The datasets provide a sample lists of requests in a time period, served by Azure's servers.
+We convert these into probability models shown in \autoref{fig:05-traces-azure}, these are used as the input workload to the scheduler.
 
 \begin{figure}[ht]
     \centering
@@ -395,45 +371,16 @@ Explain source \autocite{stojkovicDynamoLLMDesigningLLM2024}...
     \label{fig:05-traces-azure}
 \end{figure}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\textwidth]{traces_azure_vs.pdf}
-    \caption[Azure LLM Context vs Generated Tokens]
-    {Azure LLM Context vs Generated Tokens}
-    \label{fig:05-traces-azure-vs}
-\end{figure}
-
-%% Another set of traces (BurstGPT)
-%\origclearpage
-%\subsubsection{BurstGPT}
-%
-%Source \autocite{wangBurstGPTRealworldWorkload2025}
-%
-%\begin{figure}[ht]
-%    \centering
-%    \includegraphics[width=\textwidth]{traces_burst.pdf}
-%    \caption[BurstGPT Context and Generated Tokens]
-%    {BurstGPT Context and Generated Tokens}
-%    \label{fig:05-traces-burst}
-%\end{figure}
-%
-%\begin{figure}[ht]
-%    \centering
-%    \includegraphics[width=\textwidth]{traces_burst_vs.pdf}
-%    \caption[BurstGPT Context vs Generated Tokens]
-%    {DBurstGPT Context vs Generated Tokens}
-%    \label{fig:05-traces-burst-vs}
-%\end{figure}
-
-%\subsection{Results}
-% 
-% \todo{
-%\begin{itemize}
-%\item How the traces perform.
-%\end{itemize}
-%}
-
 \section{Discussion}
-\todo{
-Tie the results together
-}
+
+Within the evaluation section we successfully demonstrated the performance of the scheduling algorithm, comparing heterogenous and homogenous clusters executing the same workload.
+The heterogeneous cluster performed with $1.4\times$ higher throughput than the homogenous for code and and $1.2\times$ higher for conversation workloads.
+
+The investigation inside the \textit{inner loop} demonstrated the scheduler is able to precisely map allocation using the expected workload probability model.
+The detailed \textit{outer loop} analysis investigated the best search parameters for the Bayesian Optimisation process.
+The high skew and low minimum island count produced better throughput results.
+The results also displayed a larger batch size significantly improves performance, but increases execution time.
+
+We also demonstrated the \textit{divider} island approach performs significantly better than the \textit{direct} approach.
+Even under best conditions for the \textit{direct} method, it performs at over half the throughput compared to the \textit{divider} approach.
+

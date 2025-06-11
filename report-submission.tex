@@ -11,7 +11,7 @@
 \usepackage[pdfborder={0 0 0}]{hyperref}  % turns references into hyperlinks
 \usepackage[vmargin=20mm,hmargin=25mm]{geometry}  % adjust page margins
 \usepackage{graphicx} % allows inclusion of PDF, PNG and JPG images
-%\renewcommand{\includegraphics}[2][]{\fbox{\texttt{[image omitted]}}}
+\renewcommand{\includegraphics}[2][]{\fbox{\texttt{[image omitted]}}}
 \usepackage{parskip}  % separate paragraphs with vertical space
                       % instead of indenting their first line
 \usepackage{setspace} % for \onehalfspacing
@@ -39,8 +39,6 @@
 \usepackage{tikz}
 \usetikzlibrary{automata, positioning, arrows, shadows, fit, calc, matrix}
 \tikzset{block/.style={draw, thick, text width=3cm, minimum height=1.5cm, align=center}}  
-
-\newcommand{\todo}[1]{{\color{red}#1}}
 
 % import settings
 \input{settings/bibliography.tex} 
@@ -136,18 +134,19 @@ Main chapters (excluding front-matter, references and appendix):
 \contentpages~pages
 (pp~\pageref{firstcontentpage}--\pageref{lastcontentpage})
 
-Main chapters word count: 14469
+Main chapters word count: 14866
 
 Methodology used to generate that word count:
 
+\textit{With pdf images disabled:}
 [
 \begin{quote}
 \begin{verbatim}
 $ make wordcount
 gs -q -dSAFER -sDEVICE=txtwrite -o - \
-      -dFirstPage=10 -dLastPage=60 report-submission.pdf | \
+      -dFirstPage=9 -dLastPage=58 report-submission.pdf | \
    egrep '[A-Za-z]{3}' | wc -w
-14962
+14866
 \end{verbatim}
 \end{quote}
 ]

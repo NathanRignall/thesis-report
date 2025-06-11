@@ -29,13 +29,13 @@ The resulting throughput is then returned to the \textit{outer loop}, allowing t
 
         \draw[->, thick] (sm.north) -- (ol.south);
         \draw[->, thick]
-            (ol.east) -| node[near start, above] {propose layouts} (il.north);
+            (ol.east) -| node[near start, above] {Propose Layouts} (il.north);
         \draw[->, thick] (il.south) |- (sm.east);
 
 		\coordinate (corner) at (il.south -| sm.east);
 		\coordinate (labelbase) at ($(corner)!0.8!(sm.east)$);
 		\coordinate (labelpos) at ($(labelbase)+(2.3cm,0)$);
-	\node[below] at (labelpos) {expected throughput};
+	\node[below] at (labelpos) {Expected Throughput};
     \end{tikzpicture}
     \caption[Problem formulation demonstrating the data flow between the \emph{inner} and \emph{outer} loop operations.]
     {Problem formulation demonstrating the data flow between the \emph{inner} and \emph{outer} loop operations.}

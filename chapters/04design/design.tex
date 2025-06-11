@@ -7,17 +7,17 @@
 %the work you did in technical detail.
 
 This chapter outlines the steps taken to design and implement a new scheduler for LLM workloads, with support for Mixture-of-Experts models on heterogenous hardware.
-We begin by outlining the problem description of an LLM scheduler, introducing the terminology used throughout the section. 
+We begin by outlining the problem description of an LLM scheduler, introducing the terminology used throughout this section. 
 
 Next, we explain the choice of simulator used for modelling the system's expected throughput for a given workload.
 We then use this simulator to define the objectives for a bounded-constraint optimisation problem, which represents a subset of the overall scheduler.
 Then, we describe several scheduling assumptions that can be used as optimisation strategies in the complete scheduler.
 
-We finish by brining together the workload modelling, objectives, constraint optimisation and scheduling assumptions into a single problem formulation.
+We finish by bringing together the workload modelling, objectives, constraint optimisation and scheduling assumptions into a single problem formulation.
 Here, we separate the scheduler into a two-stage problem, with an \textit{inner} and \textit{outer} loop.
 The \textit{inner loop} assigns specific workloads to GPU islands using deterministic bin-packing.
 In contrast the \textit{outer loop} performs a heuristic search to find how best to slit up the GPU inventory into islands.
-Using this formulation we describe the specific design and then implementation of the two loops, in preparation for evaluation and testing.
+Using this formulation, we describe the specific design and then implementation of the two loops, in preparation for evaluation and testing.
 
 \section{Problem Description}
 
@@ -26,7 +26,7 @@ We can utilise previous \textit{phase splitting} technology, to assign the prefi
 
 To create a schedule we must first subdivide a list of GPUs into \textit{islands}, an island is a collection of homogenous GPUs of a given type and size.
 Presented with a list of islands, we must then assign either prefill or decode work (and configure appropriate parallelism levels with respect to MoE) to these islands, maximising a defined objective.
-In this case we are optimising for cost efficiency, so throughout with respect to cost is a good metric.
+In this case we are optimising for cost efficiency, so throughput with respect to cost is a good metric.
 
 The logical architecture of such inference system is displayed in \autoref{fig:04-service-architecture}, where incoming requests are mapped to prefill islands.
 Then, after transferring the (KV) cache, completed prefill requests are sent to the optimum decode island.

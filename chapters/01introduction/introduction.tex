@@ -30,7 +30,7 @@ However, the significant computational resources required to serve these models 
 
 Enhancing the cost-efficiency of LLM inference is therefore vital for broader adoption and for democratising access to these cutting-edge technologies.
 While service providers initially relied on mostly homogeneous hardware \autocite{zhaoLLMPQServingLLM2024}, rising GPU costs and variable availability \autocite{miaoSpotServeServingGenerative2023} make such environments impractical to maintain.
-The rationale for embracing heterogeneous clusters is that different GPU types exhibit distinct compute and memory characteristics, which can be aligned with the different resource demands of diverse inference requests types \autocite{jiangDemystifyingCostEfficiencyLLM2025}.
+The rationale for embracing heterogeneous clusters is that different GPU types exhibit distinct compute and memory characteristics, which can be aligned with the different resource demands of diverse inference request types \autocite{jiangDemystifyingCostEfficiencyLLM2025}.
 Therefore, making better use of available heterogeneous hardware to save costs is desired by both users and service providers.
 
 %paragraph 2
@@ -49,7 +49,7 @@ Furthermore, existing schedulers often avoid highly granular workload assignment
 Hence, the specific problem of scheduling MoE inference across heterogeneous hardware currently remains under-explored.
 
 % Aims
-This project aims to address this gap by developing a novel scheduling algorithm specifically designed for heterogeneous GPU clusters for use with MoE models.
+This project aims to address this gap by developing a novel scheduling algorithm specifically designed for heterogeneous GPU clusters, for use with MoE models.
 We simultaneously investigate how to improve the granularity of workload assignment, whilst also considering the architectural characteristics of MoE in scheduling.
 We propose the following research question:
 \begin{quote}
@@ -65,9 +65,9 @@ This report presents a new workload-aware Mixture-of-Experts (MoE) Large Languag
 
 	\item We build a linear optimisation technique for rapidly assigning specific workload ranges (prefill and decode) to GPU islands inside the \textit{inner loop}. Using precise workload characterisation, we target mapping of specific input sequence lengths to specific GPU islands. This enables the most optimal use of heterogeneous hardware, as the input sequence length can significantly affect the performance requirements of the prefill and decode phase of inference.
 
-	\item Next, we demonstrate the use of Bayesian Optimisation for searching how best to divide the GPUs into islands. Using a novel encoding method, we compress the problem space into just \( |T| \times 2 \), where  \( |T| \) is the total number of different GPU types. This enables a simple Gaussian Processes to search the complex division process efficiently, without incurring issues with high-dimensionality.
+	\item Next, we demonstrate the use of Bayesian Optimisation for searching how best to divide the GPUs into islands. Using a novel encoding method, we compress the problem space into just \( |T| \times 2 \), where  \( |T| \) is the total number of different GPU types. This enables a simple Gaussian Process to search the complex division process efficiently, without incurring issues with high dimensionality.
 
-	\item We build an advanced simulation system to benchmark our GPU configurations using the sate-of-the-art Shallowsim \autocite{icezack12Icezack12Shallowsim2025} simulator. This simulation system enables us to model expected throughput of an entire system, given an expected request workload trace.
+	\item We build an advanced simulation system to benchmark our GPU configurations using the state-of-the-art Shallowsim \autocite{icezack12Icezack12Shallowsim2025} simulator. This simulation system enables us to model expected throughput of an entire system, given an expected request workload trace.
 
 	\item Finally, we perform extensive analysis of both the scheduling algorithm and simulation system to express their performance characteristics. We use this data to demonstrate that for any given workload type (conversation and code), we see substantial efficiency gains. Comparing a heterogeneous cluster to a homogenous one, we see a performance improvement of up to $1.4\times$.
 
