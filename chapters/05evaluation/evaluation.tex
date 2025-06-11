@@ -25,17 +25,13 @@ Given a constant hourly GPU budget, we craft three different inventories for tes
 
 Given the Bayesian Optimisation process is non-deterministic (due to the random initialisation), the scheduling algorithm is executed five times over with the same parameters.
 Then, we take the average of the best performances from each trial and also extract the deviation score of the inner loop for these best trials.
-This allows us to demonstrate how well-matched to the targeted workload we are.
-  
-We execute these experiments using the Azure LLM datasets for both code and conversation, which are later explored in \autoref{chap:traces}.
-
-\origclearpage
+This allows us to demonstrate how well-matched to the targeted workload we are. We execute these experiments using the Azure LLM datasets for both code and conversation, which are later explored in \autoref{chap:traces}.
 
 The key results are presented in \autoref{tab:inventory-performance-grouped}, where the heterogenous cluster (a) is able to perform $1.4 \times$ faster than the homogenous cluster (c) for the same price.
-We use the conservative pricing estimate that \texttt{H20} is half the price of \texttt{H800}, and \texttt{H800} is half the price of \texttt{H200}.
+We use the conservative pricing estimate that the \texttt{H20} is $1\$/\text{hour}$, \texttt{H800} is $2\$/\text{hour}$, \texttt{H200} is $4\$/\text{hour}$ and model our GPU budget is $512\ \$/\text{hour}$.
+Shallowsim is specifically designed for DeepSeek, which is currently profiled for either china-specific or unreleased GPUs, it is challenging to extract concrete pricing information on these GPUs.
 
-Shallowsim is specifically design for DeepSeek, which is specifically profiled for either china-specific or unreleased GPUs.
-Hence, difference this would likely be even greater when considering GPU systems such as the \texttt{DGX-B300}.
+%Therefore, if we were able to have concrete pricing on GPUs such as the \texttt{DGX-B300}, the difference in performance between heterogenous and homogenous would likely be even greater.
 
 \begin{table}[ht]
   \centering
@@ -199,13 +195,19 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 \origclearpage
 \section{Outer Loop (Divider)}
 
-\todo{
-\begin{itemize}
-\item Test setup.
-\item Test approach.
-\item How to read the graphs (explain for all future sections).
-\end{itemize}
-}
+We test the \textit{outer loop} in the \textit{divider} mode using a single inventory containing 128 NVIDIA \texttt{DGX-300} and 256 NVIDIA \texttt{H200}.
+We select this single inventory due to the diverse nature of the \texttt{DGX-300} and \texttt{H200}, given the \texttt{DGX-300} has approximately three times the compute.
+This allows us to execute experiments on a strongly heterogeneous cluster.
+
+\paragraph{Experiment Setup}
+As the \textit{outer loop} is non deterministic, we execute the experiment several times and take averages of the results (trials).
+The number of trials is specifically shown under every figure, where we balance accuracy versus compute time.
+
+\paragraph{Plot Description}
+Each \textit{outer loop} plot contains a line of mean best throughput, this is the mean throughput across the best solutions in each trial, calculated at a specific iteration number.
+Plots also contain min-max ranges and standard deviations, this is calculated similarly to mean throughput; values are computed at each specific iteration across all trials.
+Finally, a line of maximum throughput is also plotted, this is the maximum throughput across all trails, iterations and experiments.
+\autoref{fig:05-batch-analysis} contains a reference of this style of plot.
 
 % Batch Size
 \subsection{Batch Size Analysis}
@@ -214,38 +216,46 @@ Then, the throughputs are weighted with the $p$ value of each sequence length $s
 ``How does changing the batch size, of solutions tested at each iteration, affect the results of the Bayesian Optimisation outer loop?''
 \end{quote}
 
-Text to explain \autoref{fig:05-batch-analysis}...
+We test the throughput performance of the scheduler using different batch size parameter values for the Bayesian Optimisation model.
+This increases the number of solutions proposed at each iteration of the acquisition function.
+Increasing the batch size has several benefits, specifically higher quality solutions with less variance.
+However this comes at the drawback of extra compute time for every iteration cycle.
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\textwidth]{outer_batch_error_area.pdf}
-    \caption[Throughput per iteration number for different batch sizes.]
+    \caption[Throughput per iteration number for different batch sizes]
     {Throughput per iteration number for different batch sizes. \textbf{Experiment Parameters:} iterations = $20$, trials = $10$, min island size = $2$, skew range = $\pm 5.0$.}
     \label{fig:05-batch-analysis}
 \end{figure}
 
-%\todo{
-%\begin{itemize}
-%\item How long on average to best solution.
-%\end{itemize}
-%}
-%\begin{figure}[ht]
-%    \centering
-%    \includegraphics[width=0.4\textwidth]{outer_batch_deltas.pdf}
-%    \caption[Batch Size Analysis (Time)]
-%    {Batch Size Analysis (Time)}
-%    \label{fig:05-batch-deltas}
-%\end{figure}
+Displayed in \autoref{fig:05-batch-analysis}, as the batch size increases, the variance of solutions decreases.
+This is expected behaviour as if we increase the number of solutions proposed, it is more likely one of these solutions is good.
+
+Shown in \autoref{fig:05-batch-deltas}, this does however result in increased execution time, where execution time is approximately proportional to batch size.
+Execution time is defined as the complete time from start to finish of all iterations, measured per trial.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\textwidth]{outer_batch_deltas.pdf}
+    \caption[Execution time of scheduler for different batch sizes]
+    {Execution time of scheduler for different batch sizes. Using experiment parameters as of \autoref{fig:05-batch-analysis}}
+    \label{fig:05-batch-deltas}
+\end{figure}
 
 % Skew
-\origclearpage
 \subsection{Skew Range Analysis}
 
 \begin{quote}
 ``How does changing the range of the skew search parameter affect the results of the outer loop whilst using the divider approach?''
 \end{quote}
 
-Text to explain \autoref{fig:05-skew-analysis}...
+Next we test how altering the skew search parameter affects the scheduling throughput value.
+Displayed in \autoref{fig:05-skew-analysis}, higher skew ranges result in marginally higher throughputs, whilst retaining similar variance to smaller ranges.
+
+This result is logical as we are able to traverse more of the island division search-space when the range is higher, unlocking possibly better solutions.
+Despite the increased search space, this completes in approximately the same execution time.
+This is expected, as we are not altering the parameters of the Bayesian Optimisation execution itself, but rather the parameters it uses to search. 
 
 \begin{figure}[ht]
     \centering
@@ -256,13 +266,18 @@ Text to explain \autoref{fig:05-skew-analysis}...
 \end{figure}
 
 % Islands
+\origclearpage
 \subsection{Minimum Island Size Analysis}
 
 \begin{quote}
 ``How does changing the minimum number of GPUs in an island affect the results of the in outer loop whilst using the divider approach?''
 \end{quote}
 
-Text to explain \autoref{fig:05-min-island-analysis}...
+We also test how altering the minimum island size affects the result of the optimisation.
+Like the skew value analysis, this is altering a search parameter, not an execution parameter of the Bayesian Optimisation.
+
+\autoref{fig:05-min-island-analysis} displays that for every increase in minimum island size, effective throughput halves.
+This is likely due to the prefill phase preferring more smaller islands, than fewer bigger islands.
 
 \begin{figure}[ht]
     \centering
@@ -274,15 +289,10 @@ Text to explain \autoref{fig:05-min-island-analysis}...
 
 
 % outer loop + inner loop
-\origclearpage
 \section{Outer Loop (Direct)}
 
-\todo{
-\begin{itemize}
-\item Test setup.
-\item Test approach.
-\end{itemize}
-}
+We also test the \textit{outer loop} in direct mode, to demonstrate the performance relative to the divider approach.
+These experiments use the exact same experiment setup, input inventory and workload trace.
 
 \subsection{Batch Size Analysis}
 
@@ -301,6 +311,7 @@ Text to explain \autoref{fig:05-direct-saasbo-batch-analysis}...
 \end{figure}
 
 Text to explain \autoref{fig:05-direct-bo-batch-analysis}...
+Only execute for 2,4,8 as 16 too big
 
 \begin{figure}[ht]
     \centering
@@ -309,6 +320,17 @@ Text to explain \autoref{fig:05-direct-bo-batch-analysis}...
     {Throughput per iteration number for different batch sizes (Direct BO). \textbf{Experiment Parameters:} iterations = $10$, trials = $5$, k slots = $16$}
     \label{fig:05-direct-bo-batch-analysis}
 \end{figure}
+
+Info on time... suprising... \autoref{fig:05-batch-deltas-comparison}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.85\textwidth]{outer_batch_deltas_comparison.pdf}
+    \caption[Execution time of direct scheduler (BO vs SAASBO) for different batch sizes]
+    {Execution time of direct scheduler (BO vs SAASBO) for different batch sizes. Using experiment parameters as of \autoref{fig:05-direct-bo-batch-analysis} and \autoref{fig:05-direct-saasbo-batch-analysis}}
+    \label{fig:05-batch-deltas-comparison}
+\end{figure}
+
 
 \origclearpage
 \subsection{K Slots Analysis}
@@ -328,7 +350,6 @@ Text to explain \autoref{fig:05-direct-saasbo-kslots-analysis}...
 \end{figure}
 
 % Introduce where the traces have come from
-\origclearpage
 \section{Real-World}
 
 \todo{

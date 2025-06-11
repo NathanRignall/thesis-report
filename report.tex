@@ -36,7 +36,8 @@
 
 % diagram packages
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta, positioning}
+\usetikzlibrary{automata, positioning, arrows, shadows, fit, calc, matrix}
+\tikzset{block/.style={draw, thick, text width=3cm, minimum height=1.5cm, align=center}}  
 
 \newcommand{\todo}[1]{{\color{red}#1}}
 
@@ -134,7 +135,7 @@ Main chapters (excluding front-matter, references and appendix):
 \contentpages~pages
 (pp~\pageref{firstcontentpage}--\pageref{lastcontentpage})
 
-Main chapters word count: 14055
+Main chapters word count: 14568
 
 Methodology used to generate that word count:
 
@@ -143,9 +144,9 @@ Methodology used to generate that word count:
 \begin{verbatim}
 $ make wordcount
 gs -q -dSAFER -sDEVICE=txtwrite -o - \
-      -dFirstPage=9 -dLastPage=61 report-submission.pdf | \
+      -dFirstPage=10 -dLastPage=61 report-submission.pdf | \
    egrep '[A-Za-z]{3}' | wc -w
-14055
+14568
 \end{verbatim}
 \end{quote}
 ]
@@ -167,7 +168,7 @@ for a comparable purpose.
 % Add here things like: Figure X is the work of Y, etc.
 
 \bigskip 
-\textbf{Signed:}
+\textbf{Signed:} \raisebox{-1cm}{\includegraphics[height=2.5cm]{signature.pdf}}
 
 \bigskip
 \textbf{Date: 11/06/2025}
@@ -188,9 +189,8 @@ for a comparable purpose.
 \listoffigures
 \listoftables
 
-\label{firstcontentpage} % start page count here
+
 \input{chapters/main.tex}
-\label{lastcontentpage} % end page count here
 
 \printbibliography
 

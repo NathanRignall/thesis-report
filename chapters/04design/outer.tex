@@ -10,9 +10,36 @@ Instead we use a refined Bayesian Optimisation (BO) search method with two diffe
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth,height=5cm]{example-image-a}
+    \begin{tikzpicture}[node distance=1cm, auto]
+        \coordinate (rt) at (0,0);
+        
+         % Inventory label + list
+        \node[anchor=east, align=center, left=2cm of rt] (inv) {
+            \underline{Inventory}\\
+            H200 -- 128\\
+            H800 -- 128\\
+            H20  -- 64
+        };
+
+        \node[block, right=0.6cm of rt, yshift=2cm, text width = 2cm] (i1) {Island\\H200 - 64};
+        \node[block, right=0.6cm of rt, yshift=-0.5cm, text width = 2cm] (i2) {Island\\ H200 - 64};
+        \node[block, right=0.6cm of i1, yshift=-1cm, text width = 2cm] (i3) {Island\\ H800 - 96};
+        \node[block, right=0.6cm of i2, yshift=-1cm, text width = 2cm] (i4) {Island\\H800 - 32};
+        \node[block, right=0.6cm of i3, yshift=0.5cm, text width = 2cm] (i5) {Island\\H20 - 32};
+        \node[block, right=0.6cm of i4, yshift=0.5cm, text width = 2cm] (i6) {Island\\H20 - 32};
+        % manual separator coordinates
+        \coordinate (sepTop) at ($(rt)+(-0.6cm,2.5cm)$);
+        \coordinate (sepBot) at ($(rt)+(-0.6cm,-2.0cm)$);
+        \draw[dotted] (sepTop) -- (sepBot);
+        
+                % midpoint of separator
+        \coordinate (sepMid) at ($(sepTop)!0.5!(sepBot)$);
+        % short stubby arrow pointing right at the midpoint
+        \draw[->, thick]  ($(sepMid)+(-0.2cm,0)$) -- ++(0.4cm,0);
+               
+    \end{tikzpicture}
     \caption[Diagram showing effective purpose of \textit{outer loop}]
-    {Diagram showing effective purpose of \textit{outer loop}.}
+    {Diagram showing effective purpose of \textit{outer loop}, GPU inventory is divided into groups of islands.}
     \label{fig:04-outer-loop-demo}
 \end{figure}
 

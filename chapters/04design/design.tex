@@ -33,9 +33,57 @@ We are developing a new scheduler component for this system.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth,height=6cm]{example-image-a}
-    \caption[Service Architecture]
-    {Service Archietcture}
+    \begin{tikzpicture}[node distance=1cm, auto]
+        \node[block] (rt) {Traffic Router};
+        \node[block, right=1cm of rt, yshift=2cm, text width = 2cm] (p1) {Prefill\\Island};
+        \node[block, right=1cm of rt, yshift=-0.5cm, text width = 2cm] (p2) {Prefill\\Island};
+        \node[block, right=1cm of p1, yshift=-1cm, text width = 2cm] (d1) {Decode\\Island};
+        \node[block, right=1cm of p2, yshift=-1cm, text width = 2cm] (d2) {Decode\\Island};
+        
+        \node[block, left=1cm of rt, yshift=2.75cm] (sec) {Scheduler};
+        
+        % landing spots on west face of router
+        \coordinate (in1) at ($(rt.west)+(0cm,0.3cm)$);
+        \coordinate (in2) at ($(rt.west)+(0cm,0.15cm)$);
+        \coordinate (in3) at ($(rt.west)+(0cm,-0.15cm)$);
+        \coordinate (in4) at ($(rt.west)+(0cm,-0.3cm)$);
+
+        % spaced‐out input arrows
+        \draw[->, thick] ([xshift=-1cm,yshift=1cm] rt.west)  -- (in1);
+        \draw[->, thick] ([xshift=-1cm,yshift=0.5cm] rt.west) -- (in2);
+        \draw[->, thick] ([xshift=-1cm,yshift=-0.5cm] rt.west)-- (in3);
+        \draw[->, thick] ([xshift=-1cm,yshift=-1cm] rt.west) -- (in4);
+        
+        % label for those four arrows
+        \node[anchor=east] at ($(rt.west)+(-1.2cm,0cm)$) {User Requests};
+        
+         % dotted right‐angle arrow from Scheduler to Traffic Router
+\draw[->, thick, dotted]
+    ([yshift=-0.15cm] sec.east) -| (rt.north);
+        
+        % Fit box around all islands
+        \node[draw, dotted, inner sep=0.6cm, fit=(p1)(p2)(d1)(d2)] (Islands) {};
+
+        % compute the shifted start/end of the dotted arrow
+        \coordinate (arrStart) at ($(sec.east)+(0,0.15cm)$);
+        \coordinate (arrEnd)   at ($(sec.east -| Islands.west)+(0,0.15cm)$);
+
+        % single straight, horizontal dotted arrow from Scheduler into box (offset up)
+        \draw[->, thick, dotted] (arrStart) -- (arrEnd);
+        
+        % direct arrows from router to prefills
+        \draw[->, thick] (rt.east) -- (p1.west);
+        \draw[->, thick] (rt.east) -- (p2.west);
+
+        % direct arrows from prefills to decode islands
+        \draw[->, thick] (p1.east) -- (d1.west);
+        \draw[->, thick] (p1.east) -- (d2.west);
+        \draw[->, thick] (p2.east) -- (d1.west);
+        \draw[->, thick] (p2.east) -- (d2.west);
+
+    \end{tikzpicture}
+    \caption[Sample service architecture of LLM inference engine]
+    {Sample service architecture of LLM inference engine, the scheduler components directs how traffic is distributed across the GPUs and confgiures the islands}
     \label{fig:04-service-architecture}
 \end{figure}
 

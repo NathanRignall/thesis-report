@@ -17,27 +17,35 @@ The \textit{outer loop} is responsible for generating promising island layouts, 
 The resulting throughput is then returned to the \textit{outer loop}, allowing the optimisation process to evaluate and refine its search for good configurations.
  This iterative cycle can be repeated multiple times to progressively generate an optimum solution.
  
-%\begin{figure}[ht]
-%    \centering
-%   \begin{tikzpicture}[
-%			node distance=1.8cm and 2.5cm,
-%			every node/.style={draw, align=center, minimum height=1.2cm, minimum width=3cm},
-%			arrow/.style={->, thick}
-%		]
-%		% Nodes
-%		\node (outer) {Outer Optimiser};
-%		\node (inner) [right=of outer] {Inner min-cost\\ flow};
-%		\node (model) [below=of inner, yshift=-0.5cm] {Model};
-%	\end{tikzpicture}
-%    \caption[Problem formulation demonstrating the data flow between the \textit{inner} and \textit{outer} loop.]
-%    {Problem formulation demonstrating the data flow between the \textit{inner} and \textit{outer} loop.}
-%    \label{fig:04-problem-formulation}
-%\end{figure}
-
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth,height=9cm]{example-image-a}
-    \caption[Problem formulation demonstrating the data flow between the \textit{inner} and \textit{outer} loop operations.]
-    {Problem formulation demonstrating the data flow between the \textit{inner} and \textit{outer} loop operations.}
+    \begin{tikzpicture}[node distance=1cm, auto]
+        \node[block] (ol) {Outer Loop};
+        \node[block, below=0cm of ol, xshift=6cm] (il) {Inner\\Loop};
+        \node[block, below=1cm of ol]            (sm) {Surrogate\\Model};
+
+        \node[above=0.3cm of ol] {(Divide Inventory)};
+        \node[right=0.3cm of il] {(Assign Work)};
+
+        \draw[->, thick] (sm.north) -- (ol.south);
+        \draw[->, thick]
+            (ol.east) -| node[near start, above] {propose layouts} (il.north);
+        \draw[->, thick] (il.south) |- (sm.east);
+
+		\coordinate (corner) at (il.south -| sm.east);
+		\coordinate (labelbase) at ($(corner)!0.8!(sm.east)$);
+		\coordinate (labelpos) at ($(labelbase)+(2.3cm,0)$);
+	\node[below] at (labelpos) {expected throughput};
+    \end{tikzpicture}
+    \caption[Problem formulation demonstrating the data flow between the \emph{inner} and \emph{outer} loop operations.]
+    {Problem formulation demonstrating the data flow between the \emph{inner} and \emph{outer} loop operations.}
     \label{fig:04-problem-formulation}
 \end{figure}
+
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=\textwidth,height=9cm]{example-image-a}
+%    \caption[Problem formulation demonstrating the data flow between the \textit{inner} and \textit{outer} loop operations.]
+%    {Problem formulation demonstrating the data flow between the \textit{inner} and \textit{outer} loop operations.}
+%    \label{fig:04-problem-formulation}
+%\end{figure}

@@ -15,12 +15,11 @@ Let $w \in W$ denote a workload type from the set of all workload types $W$.
 For each workload type $w$, we define a probability mass function $p(s \mid w)$, which represents the probability of a request having sequence length $s \in S$ under workload $w$.
 This distribution satisfies: $\sum_{s \in S} p(s \mid w) = 1 \quad \text{for all } w \in W$.
 
-% CORE TODOx
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{traces_sample_pdfs.pdf}
+    \includegraphics[width=0.7\textwidth]{traces_sample_pdfs.pdf}
     \caption[Sample probability distribution of input sequence lengths]
-    {Sample probability distribution of input sequence length. Modelled using a pdf where $mu=500$, $sigma=2000$ and truncated/normalised to the range \(0 \leq s \leq 8000\). Average decode length (100) and max decode length (500) are extracted for use in the scheduler.}
+    {Sample probability distribution of input sequence length. Modelled using a pdf where $mu=500$, $sigma=2000$ and truncated/normalised to the range \(0 \leq s \leq 8000\). Average decode length (100) and max decode length (1000) are extracted for use in the scheduler.}
     \label{fig:04-sample-prefill-pdf}
 \end{figure}
 
