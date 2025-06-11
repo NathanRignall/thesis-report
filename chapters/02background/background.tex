@@ -97,7 +97,7 @@ DeepSeek V3 and R1 are both LLMs that share a decoder-only Mixture-of-Experts (M
 Both models support long-context inference (up to 128K tokens) and are trained using FP8 mixed-precision for efficiency.
 
 A key feature of their model architecture is the use of KV cache compression during inference.
-Instead of storing full-precision key and value tensors for each expert, DeepSeek compresses these representations, significantly reducing memory bandwidth and enabling faster decode performance despite the model’s massive scale.
+Instead of storing full-precision key and value tensors for each expert, DeepSeek compresses these representations, significantly reducing memory bandwidth and enabling faster decode performance despite the model's massive scale.
 V3 is tuned for general conversation, while R1 builds on it with enhanced reasoning capabilities.
 
 % What different parallelism techniques are available
@@ -156,18 +156,18 @@ A scheduler is the core component of an LLM serving system, implementing the log
 
 \textbf{Load Balancing (Best Fit, Worst Fit)} is...}
 
-% Metaheuristic
-\subsection{Metaheuristic Algorithms}
-
-\todo{An intro...
-
-\textbf{Genetic Algorithms (GA)} is...
-
-\textbf{Particle Swarm Optimization (PSO)} is...
-
-\textbf{Ant Colony Optimisation (ACO)} is...
-
-\textbf{Simulated Annealing (SA)} is...}
+%% Metaheuristic
+%\subsection{Metaheuristic Algorithms}
+%
+%\todo{An intro...
+%
+%\textbf{Genetic Algorithms (GA)} is...
+%
+%\textbf{Particle Swarm Optimization (PSO)} is...
+%
+%\textbf{Ant Colony Optimisation (ACO)} is...
+%
+%\textbf{Simulated Annealing (SA)} is...}
 
 % Search
 \subsection{Search-Based}

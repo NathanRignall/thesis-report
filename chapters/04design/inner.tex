@@ -38,7 +38,7 @@ We can outline the steps of the \textit{inner loop} as follows:
         % Traffic Router coordinate
         \coordinate (rt) at (0,0);
 
-        % left‐side (duplicate) islands, GPU counts removed
+        % left-side (duplicate) islands, GPU counts removed
         \node[block, left=0.6cm of rt, yshift= 2cm, text width = 1.5cm, minimum height=1cm]  (l1) {Island};
         \node[block, left=0.6cm of rt, yshift=0cm, text width = 1.5cm, minimum height=1cm] (l2) {Island};
         \node[block, left=0.3cm of l1, yshift=-1cm, text width = 1.5cm, minimum height=1cm]   (l3) {Island};
@@ -46,7 +46,7 @@ We can outline the steps of the \textit{inner loop} as follows:
         \node[block, left=0.3cm of l3, yshift= 0.75cm, text width = 1.5cm, minimum height=1cm] (l5) {Island};
         \node[block, left=0.3cm of l4, yshift= 0.75cm, text width = 1.5cm, minimum height=1cm] (l6) {Island};
 
-        % right‐side islands, GPU counts removed and random tags
+        % right-side islands, GPU counts removed and random tags
         \node[block, right=0.6cm of rt, yshift= 2cm, text width = 2cm]    (i1) {Island\\(prefill)\\(000-500)};
         \node[block, right=0.6cm of rt, yshift=-0.5cm, text width = 2cm]  (i2) {Island\\(decode)\\(000-400)};
         \node[block, right=0.6cm of i1, yshift=-1cm, text width = 2cm]    (i3) {Island\\(prefill)\\(500-700)};

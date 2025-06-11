@@ -24,12 +24,13 @@ To answer the core research question, \textit{``do heterogenous clusters outperf
 Given a constant hourly GPU budget, we craft three different inventories for testing and execute the complete schedule algorithm.
 
 Given the Bayesian Optimisation process is non-deterministic (due to the random initialisation), the scheduling algorithm is executed five times over with the same parameters.
-Then, we take the average of the best performances from each trial and also extract the deviation score of the inner loop for these best trials.
-This allows us to demonstrate how well-matched to the targeted workload we are. We execute these experiments using the Azure LLM datasets for both code and conversation, which are later explored in \autoref{chap:traces}.
+Then, we take the average of the best performances from each trial and also extract the deviation score of the inner loop from these best trials.
+This allows us to demonstrate how well-matched the solutions is to the targeted workload.
+We execute these experiments using the Azure LLM \autocite{stojkovicDynamoLLMDesigningLLM2024} datasets for both code and conversation, which are later explored in \autoref{chap:traces}.
 
-The key results are presented in \autoref{tab:inventory-performance-grouped}, where the heterogenous cluster (a) is able to perform $1.4 \times$ faster than the homogenous cluster (c) for the same price.
-We use the conservative pricing estimate that the \texttt{H20} is $1\$/\text{hour}$, \texttt{H800} is $2\$/\text{hour}$, \texttt{H200} is $4\$/\text{hour}$ and model our GPU budget is $512\ \$/\text{hour}$.
-Shallowsim is specifically designed for DeepSeek, which is currently profiled for either china-specific or unreleased GPUs, it is challenging to extract concrete pricing information on these GPUs.
+The key results are presented in \autoref{tab:inventory-performance-grouped}, where the heterogenous cluster (a) is able to perform up to $1.4 \times$ faster than the homogenous cluster (c) for the same price (code), $1.2 \times$ (conversation).
+We use the conservative pricing estimate that the \texttt{H20} is $1\$/\text{hour}$, \texttt{H800} is $2\$/\text{hour}$, \texttt{H200} is $4\$/\text{hour}$ and model our overall GPU budget is $512\ \$/\text{hour}$.
+Shallowsim is specifically designed for DeepSeek, which is currently profiled for either china-specific or unreleased GPUs, therefore it is challenging to extract pricing information for all GPUs.
 
 %Therefore, if we were able to have concrete pricing on GPUs such as the \texttt{DGX-B300}, the difference in performance between heterogenous and homogenous would likely be even greater.
 
@@ -39,19 +40,19 @@ Shallowsim is specifically designed for DeepSeek, which is currently profiled fo
   \begin{tabular}{@{} l l ccc cc cc @{}}
     \toprule
     % Headers for B columns have been removed
-    \multirow{2}{*}{} & \multirow{2}{*}{Type} & \multicolumn{3}{c}{GPU Inventory} & \multicolumn{2}{c}{Code} & \multicolumn{2}{c}{Conv} \\
+    \multirow{2}{*}{} & \multirow{2}{*}{Type} & \multicolumn{3}{c}{GPU Inventory} & \multicolumn{2}{c}{Code (Azure LLM)} & \multicolumn{2}{c}{Conversation (Azure LLM)} \\
     
     % Cmidrules are adjusted for the remaining groups
     \cmidrule(lr){3-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
     
     % Sub-headers for B columns are removed
-    & & H200 & H800 & H20 & R & D & R & D \\
+    & & H200 & H800 & H20 & $R_{total}$ & $D_{total}$ & $R_{total}$ & $D_{total}$ \\
     \midrule
     
     % Data for B columns is removed from each row
-    (a) & Hetero & 64  & 64  & 128 & $176.35 \pm 20.01$ & $18.20 \pm 18.20$ & --- & --- \\
-    (b) & Hetero & 32  & 128 & 128 & $199.07 \pm 20.50$ & $21.61 \pm 14.53$ & --- & --- \\
-    (c) & Homo  & 128 & 0 & 0 & $138.82 \pm 45.90$ &  $25.31 \pm 21.46$ & --- & --- \\
+    (a) & Hetero & 64  & 64  & 128 & $176.4\pm20.0$ & $18.2\pm18.2$ & $\bm{138.4\pm15.8}$ & $5.3\pm9.2$\\
+    (b) & Hetero & 32  & 128 & 128 & $\bm{199.1\pm20.5}$ & $21.6\pm14.5$ & $125.5\pm12.4$ & $45.5\pm45.5$\\
+    (c) & Homo  & 128 & 0 & 0 & $\bm{138.8\pm45.9}$ &  $25.3\pm21.5$ & $\bm{114.1\pm5.1}$ & $7.1\pm9.7$\\
     \bottomrule
   \end{tabular}
   \caption{GPU inventory configurations with resultant performance metrics on the Azure LLM dataset for code and conversation. \textbf{Experiment Parameters:} batch size = $16$, iterations = $15$, trials = $5$, min island size = $2$, skew range = $\pm 5.0$.}
@@ -62,7 +63,7 @@ Shallowsim is specifically designed for DeepSeek, which is currently profiled fo
 \section{Inner Loop}
 \label{chap:}
 
-We test the \textit{inner loop} using four test cases (island layouts) shown in \autoref{tab:05-gpu-island}, which include two homogeneous scenarios and two heterogeneous scenarios.
+We test the \textit{inner loop} using four test cases (island layouts) shown in \autoref{tab:05-gpu-island}, this is to confirm that the \textit{inner loop} is able to precisely map workloads to a variety of island scenarios.
 One scenario from both homogeneous and heterogeneous uses GPU islands of the same size, the other uses GPU islands of different sizes.
 These islands are crafted to show the importance of selecting appropriate island sizes and potential value of heterogeneous clusters.
 
@@ -171,33 +172,39 @@ We also include the workload \textit{trace} as a reference to what the target th
 The true throughput is calculated by first benchmarking each exact sequence length (whilst also selecting the best parallelism configuration), for each island using the same method as described in \autoref{chap:inner-loop}.
 Then, the throughputs are weighted with the $p$ value of each sequence length $s$ along with the island percentage allocation $x$, of the range the sequence length resides within.
 
-% resolution
-\subsection{Resolution Impact}
+\subsection{Summary}
 
-\todo{
-\begin{itemize}
-\item To Complete.
-\item How resolution impacts solution quality vs time.
-\end{itemize}
-}
+\todo{What the results show.}
 
-% resolution
-\subsection{Objective Impact}
-
-\todo{
-\begin{itemize}
-\item To Complete. 
-\item How the objective function has been tuned.
-\end{itemize}
-}
+%% resolution
+%\subsection{Resolution Impact}
+%
+%\todo{
+%\begin{itemize}
+%\item To Complete.
+%\item How resolution impacts solution quality vs time.
+%\end{itemize}
+%}
+%
+%% resolution
+%\subsection{Objective Impact}
+%
+%\todo{
+%\begin{itemize}
+%\item To Complete. 
+%\item How the objective function has been tuned.
+%\end{itemize}
+%}
 
 % outer loop + inner loop
 \origclearpage
-\section{Outer Loop (Divider)}
+\section{Outer Loop (Divider Approach)}
+\label{chap:eval-outer-divider}
 
-We test the \textit{outer loop} in the \textit{divider} mode using a single inventory containing 128 NVIDIA \texttt{DGX-300} and 256 NVIDIA \texttt{H200}.
+We test the \textit{outer loop} in the \textit{divider} island mode using an inventory containing 128 NVIDIA \texttt{DGX-300} and 256 NVIDIA \texttt{H200}.
 We select this single inventory due to the diverse nature of the \texttt{DGX-300} and \texttt{H200}, given the \texttt{DGX-300} has approximately three times the compute.
-This allows us to execute experiments on a strongly heterogeneous cluster.
+This inventory allows us to execute experiments on a strongly heterogeneous cluster.
+The goal of these experiments is to confirm parameter choices for the Bayesian Optimisation loop.
 
 \paragraph{Experiment Setup}
 As the \textit{outer loop} is non deterministic, we execute the experiment several times and take averages of the results (trials).
@@ -205,7 +212,7 @@ The number of trials is specifically shown under every figure, where we balance 
 
 \paragraph{Plot Description}
 Each \textit{outer loop} plot contains a line of mean best throughput, this is the mean throughput across the best solutions in each trial, calculated at a specific iteration number.
-Plots also contain min-max ranges and standard deviations, this is calculated similarly to mean throughput; values are computed at each specific iteration across all trials.
+Plots also contain min-max ranges and standard deviations, this is calculated similarly to mean throughput; values are computed at each specific iteration index across all trials at that point.
 Finally, a line of maximum throughput is also plotted, this is the maximum throughput across all trails, iterations and experiments.
 \autoref{fig:05-batch-analysis} contains a reference of this style of plot.
 
@@ -231,13 +238,13 @@ However this comes at the drawback of extra compute time for every iteration cyc
 
 Displayed in \autoref{fig:05-batch-analysis}, as the batch size increases, the variance of solutions decreases.
 This is expected behaviour as if we increase the number of solutions proposed, it is more likely one of these solutions is good.
-
 Shown in \autoref{fig:05-batch-deltas}, this does however result in increased execution time, where execution time is approximately proportional to batch size.
 Execution time is defined as the complete time from start to finish of all iterations, measured per trial.
+We select batch size 16 for the final scheduler, but acknowledge this comes at the cost of requiring more compute time to complete.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.5\textwidth]{outer_batch_deltas.pdf}
+    \includegraphics[width=0.4\textwidth]{outer_batch_deltas.pdf}
     \caption[Execution time of scheduler for different batch sizes]
     {Execution time of scheduler for different batch sizes. Using experiment parameters as of \autoref{fig:05-batch-analysis}}
     \label{fig:05-batch-deltas}
@@ -256,6 +263,7 @@ Displayed in \autoref{fig:05-skew-analysis}, higher skew ranges result in margin
 This result is logical as we are able to traverse more of the island division search-space when the range is higher, unlocking possibly better solutions.
 Despite the increased search space, this completes in approximately the same execution time.
 This is expected, as we are not altering the parameters of the Bayesian Optimisation execution itself, but rather the parameters it uses to search. 
+Hence, we use the full $\pm5.0$ skew range in the main scheduler due to its improved solution generation.
 
 \begin{figure}[ht]
     \centering
@@ -277,7 +285,9 @@ We also test how altering the minimum island size affects the result of the opti
 Like the skew value analysis, this is altering a search parameter, not an execution parameter of the Bayesian Optimisation.
 
 \autoref{fig:05-min-island-analysis} displays that for every increase in minimum island size, effective throughput halves.
-This is likely due to the prefill phase preferring more smaller islands, than fewer bigger islands.
+This is due to the prefill phase preferring more smaller islands, than fewer bigger islands, and by increasing the minimum size, fewer small islands are generated.
+We select the minimum number of islands to be two for the final scheduler.
+While we would likely see performance gains with a minimum size of one, this parameter acknowledges that GPU allocation may be restricted to pairs of GPUs in cloud environments.
 
 \begin{figure}[ht]
     \centering
@@ -287,12 +297,16 @@ This is likely due to the prefill phase preferring more smaller islands, than fe
     \label{fig:05-min-island-analysis}
 \end{figure}
 
+\subsection{Summary}
+
+\todo{What have we learnt.}
 
 % outer loop + inner loop
-\section{Outer Loop (Direct)}
+\section{Outer Loop (Direct Approach)}
 
-We also test the \textit{outer loop} in direct mode, to demonstrate the performance relative to the divider approach.
-These experiments use the exact same experiment setup, input inventory and workload trace.
+We also test the \textit{outer loop} in \textit{direct} mode, to demonstrate the performance relative to the \textit{divider} island generation approach.
+These experiments use the exact same experiment setup, input inventory and workload trace as of \autoref{chap:eval-outer-divider}.
+While these experiments are less useful 
 
 \subsection{Batch Size Analysis}
 
@@ -349,7 +363,12 @@ Text to explain \autoref{fig:05-direct-saasbo-kslots-analysis}...
     \label{fig:05-direct-saasbo-kslots-analysis}
 \end{figure}
 
+\subsection{Summary}
+
+\todo{What have we learnt.}
+
 % Introduce where the traces have come from
+\origclearpage
 \section{Real-World}
 
 \todo{
@@ -366,7 +385,7 @@ Text to explain \autoref{fig:05-direct-saasbo-kslots-analysis}...
 % The main set of traces (Azure LLM)
 \subsubsection{Azure LLM}
 
-Source \autocite{stojkovicDynamoLLMDesigningLLM2024}
+Explain source \autocite{stojkovicDynamoLLMDesigningLLM2024}...
 
 \begin{figure}[ht]
     \centering
@@ -384,32 +403,37 @@ Source \autocite{stojkovicDynamoLLMDesigningLLM2024}
     \label{fig:05-traces-azure-vs}
 \end{figure}
 
-% Another set of traces (BurstGPT)
-\origclearpage
-\subsubsection{BurstGPT}
+%% Another set of traces (BurstGPT)
+%\origclearpage
+%\subsubsection{BurstGPT}
+%
+%Source \autocite{wangBurstGPTRealworldWorkload2025}
+%
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=\textwidth]{traces_burst.pdf}
+%    \caption[BurstGPT Context and Generated Tokens]
+%    {BurstGPT Context and Generated Tokens}
+%    \label{fig:05-traces-burst}
+%\end{figure}
+%
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=\textwidth]{traces_burst_vs.pdf}
+%    \caption[BurstGPT Context vs Generated Tokens]
+%    {DBurstGPT Context vs Generated Tokens}
+%    \label{fig:05-traces-burst-vs}
+%\end{figure}
 
-Source \autocite{wangBurstGPTRealworldWorkload2025}
+%\subsection{Results}
+% 
+% \todo{
+%\begin{itemize}
+%\item How the traces perform.
+%\end{itemize}
+%}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\textwidth]{traces_burst.pdf}
-    \caption[BurstGPT Context and Generated Tokens]
-    {BurstGPT Context and Generated Tokens}
-    \label{fig:05-traces-burst}
-\end{figure}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\textwidth]{traces_burst_vs.pdf}
-    \caption[BurstGPT Context vs Generated Tokens]
-    {DBurstGPT Context vs Generated Tokens}
-    \label{fig:05-traces-burst-vs}
-\end{figure}
-
- \subsection{Results}
- 
- \todo{
-\begin{itemize}
-\item How the traces perform.
-\end{itemize}
+\section{Discussion}
+\todo{
+Tie the results together
 }

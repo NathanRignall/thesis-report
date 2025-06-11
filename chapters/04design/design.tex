@@ -4,7 +4,8 @@
 
 %This chapter may be called something else\ldots but in general the
 %idea is that you have one (or a few) ``meat'' chapters which describe
-%the work you did in technical detail.
+%the work you did in technical detail.
+
 This chapter outlines the steps taken to design and implement a new scheduler for LLM workloads, with support for Mixture-of-Experts models on heterogenous hardware.
 We begin by outlining the problem description of an LLM scheduler, introducing the terminology used throughout the section. 
 
@@ -48,7 +49,7 @@ We are developing a new scheduler component for this system.
         \coordinate (in3) at ($(rt.west)+(0cm,-0.15cm)$);
         \coordinate (in4) at ($(rt.west)+(0cm,-0.3cm)$);
 
-        % spaced‐out input arrows
+        % spaced-out input arrows
         \draw[->, thick] ([xshift=-1cm,yshift=1cm] rt.west)  -- (in1);
         \draw[->, thick] ([xshift=-1cm,yshift=0.5cm] rt.west) -- (in2);
         \draw[->, thick] ([xshift=-1cm,yshift=-0.5cm] rt.west)-- (in3);
@@ -57,7 +58,7 @@ We are developing a new scheduler component for this system.
         % label for those four arrows
         \node[anchor=east] at ($(rt.west)+(-1.2cm,0cm)$) {User Requests};
         
-         % dotted right‐angle arrow from Scheduler to Traffic Router
+         % dotted right-angle arrow from Scheduler to Traffic Router
 \draw[->, thick, dotted]
     ([yshift=-0.15cm] sec.east) -| (rt.north);
         

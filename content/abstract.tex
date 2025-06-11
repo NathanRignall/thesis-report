@@ -1,16 +1,30 @@
 \chapter*{Abstract}
 
-\todo{
+%\todo{
+%
+%\begin{itemize}
+%\item LLM Inference Challanges.
+%\item Separating Prefill and Decode phases.
+%\item Challenges of Scheduling.
+%\item MoE Scheduler is novel.
+%\item Problem formulation (inner + outer).
+%\item New Inner Loop.
+%\item New Outer Loop.
+%\item Results.
+%\end{itemize}
+%
+%}
 
-\begin{itemize}
-\item LLM Inference Challanges.
-\item Separating Prefill and Decode phases.
-\item Challenges of Scheduling.
-\item MoE Scheduler is novel.
-\item Problem formulation (inner + outer).
-\item New Inner Loop.
-\item New Outer Loop.
-\item Results.
-\end{itemize}
+The significant operational cost of Large Language Model (LLM) inference, presents a considerable challenge to their continued widespread adoption.
+Compounded by rising GPU prices and variable hardware availability, deploying the large-scale homogeneous clusters is often financially prohibitive. 
+Heterogeneous hardware clusters, which mix different types of GPUs, offer a solution to mitigate these significant costs.
+However, existing scheduling systems do not adequately address the unique computational patterns of new Mixture-of-Expert (MoE) models within these complex environments.
 
-}
+This research project addresses this gap by developing and evaluating a novel scheduling algorithm, specifically designed to optimise MoE model inference on heterogeneous GPU clusters.
+The algorithm is separated into two distinct processing stages: an outer loop and an inner loop.
+The outer loop uses Bayesian Optimisation to efficiently search the complex configuration space, partitioning an inventory of different GPUs into small optimal 'islands'.
+For the inner loop, this work implements a new linear programming formulation that precisely maps workload ranges, categorised by input sequence length and separated into prefill and decode phases, to the generated islands.
+
+The scheduling algorithm was evaluated using a simulation framework on real-world workload traces.
+Results demonstrate that this approach, when applied to a heterogeneous GPU cluster, can achieve a 1.4x throughput improvement over a homogeneous cluster of equivalent cost.
+This work concludes that a workload-aware scheduling approach can unlock substantial performance and cost-efficiency gains for serving large-scale MoE models in complex, heterogeneous environments.

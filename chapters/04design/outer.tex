@@ -43,11 +43,11 @@ Instead we use a refined Bayesian Optimisation (BO) search method with two diffe
     \label{fig:04-outer-loop-demo}
 \end{figure}
 
-We select Bayesian Optimisation specifically due to its ability to efficiently explore high-dimensional, expensive‐to‐evaluate spaces with only a few hundred evaluations, rather than the exponential cost of a full grid search.
-By maintaining a surrogate model of the island‐layout performance (gaussian process over layouts), Bayesian Optimisation balances exploration (sampling layouts in poorly understood regions) with exploitation (refining around the current best layouts).
+We select Bayesian Optimisation specifically due to its ability to efficiently explore high-dimensional, expensive-to-evaluate spaces with only a few hundred evaluations, rather than the exponential cost of a full grid search.
+By maintaining a surrogate model of the island-layout performance (gaussian process over layouts), Bayesian Optimisation balances exploration (sampling layouts in poorly understood regions) with exploitation (refining around the current best layouts).
 
-Unlike reinforcement learning, which often requires thousands of samples to learn a policy, BO is designed for “one‐shot” black‐box optimisation. %CITE
-With the correct parameters it can deliver near‐optimal solutions with far fewer simulator calls, minimal hyper-parameter tuning, and strong convergence.
+Unlike reinforcement learning, which often requires thousands of samples to learn a policy, BO is designed for ``one-shot'' black-box optimisation. %CITE
+With the correct parameters it can deliver near-optimal solutions with far fewer simulator calls, minimal hyper-parameter tuning, and strong convergence.
 This applies to our-use case where the \textit{inner loop} and constraint optimisation solver is effectively black-box.
 
 % First BO Method
