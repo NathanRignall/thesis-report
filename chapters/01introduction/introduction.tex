@@ -69,18 +69,15 @@ This report presents a new workload-aware Mixture-of-Experts (MoE) Large Languag
 
 	\item We build an advanced simulation system to benchmark our GPU configurations using the sate-of-the-art Shallowsim \autocite{icezack12Icezack12Shallowsim2025} simulator. This simulation system enables us to model expected throughput of an entire system, given an expected request workload trace.
 
-	\item Finally, we perform extensive analysis of both the scheduling algorithm and simulation system to express their performance characteristics. We use this data to demonstrate that for any given workload type (conversation and code), we see substantial efficiency gains [\textbf{put exact number here, still computing}].
+	\item Finally, we perform extensive analysis of both the scheduling algorithm and simulation system to express their performance characteristics. We use this data to demonstrate that for any given workload type (conversation and code), we see substantial efficiency gains. Comparing a heterogeneous cluster to a homogenous one, we see a performance improvement of up to $1.4\times$.
 
 \end{itemize}
 
 \section{Outline}
 
-\todo{
+Chapter two first provides the essential background on transformer models, specifically focusing on their computational steps during inference.
+Next, chapter three introduces the related work, reviewing the existing literature on phase splitting and homogenous serving whilst identifying the gaps for future exploration.
+The design is presented in chapter four, this includes details of the novel scheduling algorithm and explains reasons behind the design decisions.
+Chapter five performs comprehensive evaluation of the scheduler using simulator technology, demonstrating the choice of parameters and benefits of heterogenous versus homogenous clusters.
+Finally, chapter six concludes by summarising the findings and discussing potential avenues for future work.
 
-\begin{itemize}
-	\item Chapter by chapter breakdown.
-\end{itemize}
-
-%Background, transformer models
-
-}

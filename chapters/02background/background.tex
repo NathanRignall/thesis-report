@@ -142,19 +142,19 @@ In the context of LLM inference, their role is to solve the complex optimisation
 A scheduler is the core component of an LLM serving system, implementing the logic for resource assignment that is essential for maximising hardware utilisation and meeting performance goals.
 
 % Heuristic
-\subsection{Heuristic-Based Methods}
-
-\todo{What is this kind of technique?
-
-\textbf{First-Come, First-Served (FCFS)} is...
-
-\textbf{Round Robin (RR)} is...
-
-\textbf{Min-Min / Max-Min} is...
-
-\textbf{Priority-Based} is...
-
-\textbf{Load Balancing (Best Fit, Worst Fit)} is...}
+%\subsection{Heuristic-Based Methods}
+%
+%\todo{What is this kind of technique?
+%
+%\textbf{First-Come, First-Served (FCFS)} is...
+%
+%\textbf{Round Robin (RR)} is...
+%
+%\textbf{Min-Min / Max-Min} is...
+%
+%\textbf{Priority-Based} is...
+%
+%\textbf{Load Balancing (Best Fit, Worst Fit)} is...}
 
 %% Metaheuristic
 %\subsection{Metaheuristic Algorithms}
@@ -171,23 +171,24 @@ A scheduler is the core component of an LLM serving system, implementing the log
 
 % Search
 \subsection{Search-Based}
-Search-based Optimisation refers to methods that systematically or semi-randomly explore a given search space to find an optimal solution. Such techniques are often used to tune a scheduler's parameters, but can also 
+Search-based Optimisation refers to methods that systematically or semi-randomly explore a given search space to find an optimal solution.
+Such techniques are often used to tune a scheduler's parameters (particularly in machine learning), but can also be used to directly construct a schedule.
 
-\todo{
+\textbf{Bayesian Optimisation (BO)} is an efficient model-based approach for finding the maximum of expensive to evaluate functions.
+It builds a probabilistic surrogate model (an approximate function, that is often a Gaussian Process) of the objective function.
+An acquisition function then uses the surrogate model's predictions to intelligently select the next set of parameters to evaluate.
+This process balances exploration (sampling in areas of high uncertainty) with exploitation (sampling where the model predicts high performance), allowing it to find good solutions with fewer evaluations compared to other methods search methods.
 
-\textbf{Bayesian Optimisation (BO)}
-Aquastition function
-Approximate function
+Standard Bayesian Optimisation often struggles when the number of parameters is very large due to the curse of dimensionality.
+To address this, specialised versions of BO, like \textbf{SAASBO (Sparse Axis-Aligned Subspace Bayesian Optimisation)} have been developed 
+SAASBO overcomes this by assuming sparsity, allowing it to automatically identify and focus its search within the low-dimensional subspace of the most influential parameters \autocite{erikssonHighDimensionalBayesianOptimization2021}.
 
-\textbf{Random Search}
-Sample search space uniformly at random + evaluate
-Context - randomly generate candidate schedules, and pick the best one found
-Search space is significant
+\textbf{Random Search} operates by sampling configurations from the parameter search space uniformly at random and evaluating their performance
+In the context of scheduling, this involves randomly generating a number of candidate parameter solutions, evaluating the scheduler's performance with each, and selecting the best one found.
 
-\textbf{Grid Search}
-Brute force
-Discrete set of possible values for each parameter, then evaluates every combination
-Suffers from curse of dimensionality}
+\textbf{Grid Search} is a brute-force technique that performs an exhaustive search over a manually specified subset of the parameter space.
+It defines a discrete grid of values for each parameter and evaluates every possible combination.
+Its primary disadvantage is the curse of dimensionality, where the number of evaluations required grows exponentially with the number of parameters.
 
 % Constraint
 \subsection{Constraint Programming}

@@ -23,7 +23,7 @@
 \usepackage{subcaption} %Subcaption
 \usepackage{xcolor} % Colours
 \usepackage{booktabs}   % for \toprule, \midrule, \bottomrule, etc.
-\usepackage{multirow}   % only if you use \multirow{…}
+\usepackage{multirow}   
  \usepackage{array} 
  \usepackage{tabularx}  % only if you want auto-wrapping or special column widths
 \usepackage{url}
@@ -145,9 +145,9 @@ Methodology used to generate that word count:
 \begin{verbatim}
 $ make wordcount
 gs -q -dSAFER -sDEVICE=txtwrite -o - \
-      -dFirstPage=10 -dLastPage=61 report-submission.pdf | \
+      -dFirstPage=10 -dLastPage=60 report-submission.pdf | \
    egrep '[A-Za-z]{3}' | wc -w
-14469
+14962
 \end{verbatim}
 \end{quote}
 ]
